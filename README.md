@@ -4,6 +4,8 @@ App NOA (Vue 3 + Vite + Capacitor) distribuida como APK firmada via GitHub Relea
 
 - ID: `com.transportessinbarreras.noa`
 - Versionado: tag `vX.Y.Z` = `versionName X.Y.Z`. `versionCode` = numero de ejecucion del workflow (siempre creciente).
+- APK: `NOA-vX.Y.Z.apk` (sin espacios) + `NOA-vX.Y.Z.apk.sha256.txt`, solo como assets del Release, nunca en git.
+- Notas: plantilla en `.github/RELEASE_TEMPLATE.md`.
 - Actualizacion: instalar el APK nuevo encima, conserva datos si se mantiene ID + firma.
 
 ## Publicar una actualizacion

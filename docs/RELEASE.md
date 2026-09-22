@@ -23,7 +23,9 @@ git tag v1.0.1
 git push origin v1.0.1
 ```
 
-El workflow `.github/workflows/android-release.yml` hace: `npm ci` > `build --mode production` > `cap sync` > inyecta version > `assembleRelease` firmado > publica `NOA-v1.0.1.apk` + `.sha256.txt`.
+El workflow `.github/workflows/android-release.yml` hace: `npm ci` > `build --mode production` > `cap sync` > inyecta version > `assembleRelease` firmado > publica `NOA-vX.Y.Z.apk` + `.sha256.txt`.
+
+El cuerpo del Release se toma de la plantilla `.github/RELEASE_TEMPLATE.md` (ajustar version y seccion "Incluye" en cada version).
 
 Reglas de actualizacion Android:
 
