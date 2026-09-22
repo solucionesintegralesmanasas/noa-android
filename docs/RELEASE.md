@@ -34,7 +34,9 @@ Reglas de actualizacion Android:
 
 1. Mismo `applicationId` (`com.transportessinbarreras.noa`).
 2. Misma firma (mismo `.jks`).
-3. `versionCode` mayor (lo pone el workflow con `run_number`).
+3. `versionCode` mayor: el workflow lo calcula como actual de
+   `build.gradle` + 1 (no usa `run_number`, para que reintentos o corridas
+   manuales no rompan la secuencia).
 
 ## 4. Verificar antes de distribuir
 

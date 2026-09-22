@@ -37,7 +37,6 @@ jobs:
           VERSION="${TAG#v}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "version_code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
           echo "apk_name=NOA-${TAG}.apk" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencias
@@ -64,16 +63,20 @@ jobs:
         run: npx cap sync android
 
       - name: Inyectar versionCode/versionName
+        # versionCode = actual de build.gradle + 1 (siempre creciente,
+        # independiente de reintentos o corridas manuales del workflow).
         run: |
-          python3 - "${{ steps.ver.outputs.version }}" "${{ steps.ver.outputs.version_code }}" <<'PY'
+          python3 - "${{ steps.ver.outputs.version }}" <<'PY'
           import re, sys
-          version, code = sys.argv[1], sys.argv[2]
+          version = sys.argv[1]
           p = "android/app/build.gradle"
           s = open(p, encoding="utf-8").read()
-          s = re.sub(r'versionCode\s+\d+', f'versionCode {code}', s)
+          current = int(re.search(r'versionCode\s+(\d+)', s).group(1))
+          new_code = current + 1
+          s = re.sub(r'versionCode\s+\d+', f'versionCode {new_code}', s)
           s = re.sub(r'versionName\s+"[^"]+"', f'versionName "{version}"', s)
           open(p, "w", encoding="utf-8").write(s)
-          print(f"versionName={version} versionCode={code}")
+          print(f"versionName={version} versionCode={new_code}")
           PY
 
       - name: Restaurar keystore
