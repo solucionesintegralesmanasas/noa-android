@@ -1,0 +1,23 @@
+<!-- NOA Transportes - Icono N - SVG vectorial real -->
+<!-- Vectorizado desde noa.png (256x256) con potrace + degradado lineal recreado - 2026-09-14 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="NOA - N">
+  <title>N de NOA Transportes</title>
+  <defs>
+    <linearGradient id="nGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#001C41"/>
+      <stop offset="32%" stop-color="#002A62"/>
+      <stop offset="55%" stop-color="#0A4EBB"/>
+      <stop offset="78%" stop-color="#0A90F5"/>
+      <stop offset="100%" stop-color="#00A9FF"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(0,256) scale(0.1,-0.1)" fill="url(#nGradient)" stroke="none">
+    <path d="M645 1931 c-35 -15 -51 -42 -105 -181 -29 -74 -77 -198 -107 -275
+-30 -77 -70 -180 -88 -230 -19 -49 -75 -198 -124 -330 -99 -261 -101 -270 -68
+-279 36 -10 374 -7 401 4 23 8 35 38 117 292 180 558 187 578 199 578 8 0 83
+-89 472 -567 126 -155 236 -287 245 -295 22 -18 293 -25 332 -8 34 14 33 11
+136 290 46 124 149 396 229 605 81 209 144 386 141 392 -3 10 -58 13 -229 13
+-219 0 -226 -1 -250 -22 -21 -20 -276 -635 -276 -668 0 -37 -52 20 -296 325
+-163 204 -287 350 -301 356 -30 11 -400 11 -428 0z"/>
+  </g>
+</svg>

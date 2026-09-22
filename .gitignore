@@ -1,0 +1,32 @@
+# Dependencias y build web
+node_modules/
+dist/
+dist-ssr/
+
+# Android generados / locales
+android/build/
+android/.gradle/
+android/app/build/
+android/local.properties
+android/app/release.keystore
+*.jks
+*.keystore
+
+# Binarios: solo via Releases, nunca en git
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Env locales (se versiona .env.production como base de CI)
+.env
+.env.local
+.env.*.local
+
+# Logs y sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.idea/

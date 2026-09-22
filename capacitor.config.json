@@ -1,0 +1,10 @@
+{
+  "appId": "com.transportessinbarreras.noa",
+  "appName": "NOA",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

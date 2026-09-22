@@ -1,0 +1,44 @@
+/*
+ * Puente visual entre los controles PrimeVue Aura y los inputs Falcon.
+ * Ambos deben compartir altura, tipografia y ritmo dentro de las filas de
+ * formularios para evitar que los campos queden desalineados.
+ */
+:root {
+    --noa-form-control-height: 36px;
+}
+
+.p-select,
+.p-multiselect {
+    min-height: var(--noa-form-control-height) !important;
+    height: var(--noa-form-control-height) !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+}
+
+.p-select-label,
+.p-multiselect-label {
+    display: flex;
+    align-items: center;
+    min-height: calc(var(--noa-form-control-height) - 2px) !important;
+    padding: 0.3125rem 1rem !important;
+    line-height: 1.5 !important;
+}
+
+.p-select-dropdown,
+.p-multiselect-dropdown {
+    width: 2.5rem;
+}
+
+.p-select.p-invalid,
+.p-multiselect.p-invalid {
+    border-color: var(--bs-danger, #dc3545);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .p-select,
+    .p-multiselect,
+    .p-select-label,
+    .p-multiselect-label {
+        transition: none;
+    }
+}

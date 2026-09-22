@@ -1,0 +1,812 @@
+{
+  "app": {
+    "name": "Factus Live",
+    "version": "v{version}",
+    "loading": "Loading...",
+    "error": {
+      "title": "Something went wrong",
+      "message": "An unexpected error occurred. Please try again.",
+      "retry": "Retry",
+      "report": "Report Issue"
+    },
+    "session": {
+      "expired": "Your session has expired",
+      "renew": "Renew session",
+      "warning": "Your session will expire in {minutes} minutes",
+      "devMode": "Development mode - Security features enabled",
+      "offline": "No internet connection - Offline mode enabled"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "remember": "Remember me",
+      "forgot": "Forgot password?",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "signup": "Sign up",
+      "2fa": {
+        "title": "Two-Factor Authentication",
+        "code": "Verification code",
+        "submit": "Verify",
+        "resend": "Resend code ({seconds}s)"
+      }
+    },
+    "signup": {
+      "title": "Create your account",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "login": "Sign in"
+    },
+    "password": {
+      "reset": {
+        "title": "Reset your password",
+        "email": "Enter your email",
+        "submit": "Send reset link",
+        "back": "Back to login",
+        "success": "Check your email for a reset link"
+      },
+      "change": {
+        "current": "Current password",
+        "new": "New password",
+        "confirm": "Confirm new password",
+        "submit": "Change password",
+        "success": "Password updated successfully"
+      }
+    },
+    "logout": {
+      "success": "You have been logged out",
+      "confirm": "Are you sure you want to log out?"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "breadcrumb": "Dashboard",
+    "welcome": "Welcome back, {name}!",
+    "stats": {
+      "users": "{count} users | {count} user | {count} users",
+      "invoices": "{count} invoices | {count} invoice | {count} invoices",
+      "revenue": "Revenue: {amount}"
+    }
+  },
+  "user": {
+    "profile": {
+      "title": "Profile settings",
+      "breadcrumb": "Profile",
+      "email": "Email",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "timezone": "Timezone",
+      "locale": "Language",
+      "theme": "Theme",
+      "update": "Update profile",
+      "success": "Profile updated"
+    },
+    "security": {
+      "2fa": {
+        "title": "Two-Factor Authentication",
+        "breadcrumb": "2FA",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "enable": "Enable 2FA",
+        "disable": "Disable 2FA",
+        "setup": "Scan this QR code with your authenticator app",
+        "backup": "Backup codes (store safely):"
+      }
+    }
+  },
+  "permissions": {
+    "denied": {
+      "title": "Access denied",
+      "message": "You don't have permission to access this resource."
+    }
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email",
+    "password": {
+      "min": "Password must be at least {min} characters",
+      "special": "Password must contain a special character",
+      "number": "Password must contain a number"
+    },
+    "tenantId": "Tenant ID must be lowercase, alphanumeric, and may contain hyphens"
+  },
+  "date": {
+    "short": "{date, date, short}",
+    "medium": "{date, date, medium}",
+    "long": "{date, date, long}",
+    "datetime": "{date, datetime, medium}"
+  },
+  "number": {
+    "currency": "{value, number, ::currency/{currency}}",
+    "percent": "{value, number, ::percent}",
+    "bytes": "{value, number} {unit}"
+  },
+  "common": {
+    "retry": "Retry",
+    "retrying": "Retrying...",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "detail": "Detail",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "actions": "Actions",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "admin": "Administration",
+    "fleet": "Fleet",
+    "commercial": "Commercial",
+    "operations": "Operations",
+    "billing": "Billing",
+    "finances": "Finances",
+    "procedures": "Procedures"
+  },
+  "company": {
+    "title": "Company data",
+    "breadcrumb": "Company",
+    "lists": {
+      "title": "Company lists",
+      "breadcrumb": "Company lists",
+      "create": {
+        "title": "Create company list",
+        "breadcrumb": "Create list"
+      },
+      "edit": {
+        "title": "Edit company list",
+        "breadcrumb": "Edit list"
+      },
+      "delete": {
+        "title": "Delete company list",
+        "breadcrumb": "Delete list"
+      }
+    },
+    "sedes": {
+      "title": "Branches",
+      "breadcrumb": "Branches",
+      "create": {
+        "title": "Create branch",
+        "breadcrumb": "Create branch"
+      },
+      "edit": {
+        "title": "Edit branch",
+        "breadcrumb": "Edit branch"
+      }
+    },
+    "resolucionHabilitacion": {
+      "title": "Enablement Resolution",
+      "breadcrumb": "Enablement Resolution",
+      "create": {
+        "title": "Create enablement resolution",
+        "breadcrumb": "Create resolution"
+      },
+      "edit": {
+        "title": "Edit enablement resolution",
+        "breadcrumb": "Edit resolution"
+      }
+    },
+    "capacidadTransportadora": {
+      "title": "Transport capacity",
+      "breadcrumb": "Transport capacity",
+      "create": {
+        "title": "Create transport capacity",
+        "breadcrumb": "Create capacity"
+      },
+      "edit": {
+        "title": "Edit transport capacity",
+        "breadcrumb": "Edit capacity"
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "breadcrumb": "Settings",
+    "rangeFuec": {
+      "title": "FUEC numbering range",
+      "breadcrumb": "FUEC range",
+      "create": {
+        "title": "Create FUEC range",
+        "breadcrumb": "Create range"
+      },
+      "edit": {
+        "title": "Edit FUEC range",
+        "breadcrumb": "Edit range"
+      }
+    },
+    "globalParams": {
+      "title": "Global parameters",
+      "breadcrumb": "Global parameters"
+    },
+    "usersAccess": {
+      "title": "Users & access",
+      "breadcrumb": "Users",
+      "create": {
+        "title": "Create user",
+        "breadcrumb": "Create user"
+      },
+      "edit": {
+        "title": "Edit user",
+        "breadcrumb": "Edit user"
+      }
+    },
+    "roles": {
+      "title": "Roles & permissions",
+      "breadcrumb": "Roles",
+      "create": {
+        "title": "Create role",
+        "breadcrumb": "Create role"
+      },
+      "edit": {
+        "title": "Edit role",
+        "breadcrumb": "Edit role"
+      }
+    },
+    "permissions": {
+      "title": "System permissions",
+      "breadcrumb": "Permissions"
+    },
+    "auditLogs": {
+      "title": "Audit / Logs",
+      "breadcrumb": "Audit"
+    }
+  },
+  "affiliates": {
+    "title": "Affiliates",
+    "breadcrumb": "Affiliates",
+    "list": {
+      "title": "Affiliates list",
+      "breadcrumb": "Affiliates"
+    },
+    "create": {
+      "title": "Create affiliate",
+      "breadcrumb": "Create affiliate"
+    },
+    "edit": {
+      "title": "Edit affiliate",
+      "breadcrumb": "Edit affiliate"
+    },
+    "detail": {
+      "title": "Affiliate detail",
+      "breadcrumb": "Detail"
+    },
+    "pendingFees": {
+      "title": "Pending charges",
+      "breadcrumb": "Pending charges"
+    },
+    "vehicleHistory": {
+      "title": "Vehicle history",
+      "breadcrumb": "Vehicle history"
+    }
+  },
+  "vehicles": {
+    "title": "Vehicles",
+    "breadcrumb": "Vehicles",
+    "list": {
+      "title": "Fleet list",
+      "breadcrumb": "Fleet"
+    },
+    "create": {
+      "title": "Create vehicle",
+      "breadcrumb": "Create vehicle"
+    },
+    "edit": {
+      "title": "Edit vehicle",
+      "breadcrumb": "Edit vehicle"
+    },
+    "detail": {
+      "title": "Vehicle detail",
+      "breadcrumb": "Detail"
+    },
+    "hojaVida": {
+      "title": "Vehicle record",
+      "breadcrumb": "Vehicle record",
+      "detail": {
+        "title": "Record detail",
+        "breadcrumb": "Detail"
+      }
+    },
+    "docsVigentes": {
+      "title": "Current documents",
+      "breadcrumb": "Current docs"
+    },
+    "maintenance": {
+      "title": "Maintenance",
+      "breadcrumb": "Maintenance",
+      "create": {
+        "title": "Register maintenance",
+        "breadcrumb": "New maintenance"
+      },
+      "edit": {
+        "title": "Edit maintenance",
+        "breadcrumb": "Edit maintenance"
+      }
+    },
+    "convenios": {
+      "title": "Agreements",
+      "breadcrumb": "Agreements",
+      "create": {
+        "title": "Create agreement",
+        "breadcrumb": "Create agreement"
+      },
+      "edit": {
+        "title": "Edit agreement",
+        "breadcrumb": "Edit agreement"
+      }
+    },
+    "docs": {
+      "title": "Vehicle documents",
+      "breadcrumb": "Vehicle docs",
+      "soat": {
+        "title": "SOAT",
+        "breadcrumb": "SOAT",
+        "create": {
+          "title": "Register SOAT",
+          "breadcrumb": "New SOAT"
+        },
+        "edit": {
+          "title": "Edit SOAT",
+          "breadcrumb": "Edit SOAT"
+        }
+      },
+      "tecnomecanica": {
+        "title": "Technical inspection",
+        "breadcrumb": "Tech inspection",
+        "create": {
+          "title": "Register technical inspection",
+          "breadcrumb": "New inspection"
+        },
+        "edit": {
+          "title": "Edit technical inspection",
+          "breadcrumb": "Edit inspection"
+        }
+      },
+      "poliza": {
+        "title": "RCC & RCE Policy",
+        "breadcrumb": "Policy",
+        "create": {
+          "title": "Register policy",
+          "breadcrumb": "New policy"
+        },
+        "edit": {
+          "title": "Edit policy",
+          "breadcrumb": "Edit policy"
+        }
+      },
+      "tarjetaOperacion": {
+        "title": "Operation card",
+        "breadcrumb": "Operation card",
+        "create": {
+          "title": "Register operation card",
+          "breadcrumb": "New card"
+        },
+        "edit": {
+          "title": "Edit operation card",
+          "breadcrumb": "Edit card"
+        }
+      }
+    }
+  },
+  "drivers": {
+    "title": "Drivers",
+    "breadcrumb": "Drivers",
+    "list": {
+      "title": "Drivers list",
+      "breadcrumb": "Drivers"
+    },
+    "create": {
+      "title": "Create driver",
+      "breadcrumb": "Create driver"
+    },
+    "edit": {
+      "title": "Edit driver",
+      "breadcrumb": "Edit driver"
+    },
+    "detail": {
+      "title": "Driver detail",
+      "breadcrumb": "Detail"
+    },
+    "licencias": {
+      "title": "Driver licenses",
+      "breadcrumb": "Licenses",
+      "create": {
+        "title": "Register license",
+        "breadcrumb": "New license"
+      },
+      "edit": {
+        "title": "Edit license",
+        "breadcrumb": "Edit license"
+      }
+    },
+    "aportesPila": {
+      "title": "PILA contributions",
+      "breadcrumb": "PILA contributions",
+      "create": {
+        "title": "Register PILA contribution",
+        "breadcrumb": "New contribution"
+      },
+      "edit": {
+        "title": "Edit PILA contribution",
+        "breadcrumb": "Edit contribution"
+      }
+    }
+  },
+  "thirdParties": {
+    "title": "Third parties",
+    "breadcrumb": "Third parties",
+    "clients": {
+      "title": "Clients",
+      "breadcrumb": "Clients",
+      "create": {
+        "title": "Create client",
+        "breadcrumb": "Create client"
+      },
+      "edit": {
+        "title": "Edit client",
+        "breadcrumb": "Edit client"
+      },
+      "detail": {
+        "title": "Client detail",
+        "breadcrumb": "Detail"
+      }
+    },
+    "suppliers": {
+      "title": "Suppliers",
+      "breadcrumb": "Suppliers",
+      "create": {
+        "title": "Create supplier",
+        "breadcrumb": "Create supplier"
+      },
+      "edit": {
+        "title": "Edit supplier",
+        "breadcrumb": "Edit supplier"
+      },
+      "detail": {
+        "title": "Supplier detail",
+        "breadcrumb": "Detail"
+      }
+    }
+  },
+  "contractors": {
+    "title": "Contractors",
+    "breadcrumb": "Contractors",
+    "list": {
+      "title": "Contractors list",
+      "breadcrumb": "Contractors"
+    },
+    "create": {
+      "title": "Create contractor",
+      "breadcrumb": "Create contractor"
+    },
+    "edit": {
+      "title": "Edit contractor",
+      "breadcrumb": "Edit contractor"
+    },
+    "detail": {
+      "title": "Contractor detail",
+      "breadcrumb": "Detail"
+    },
+    "contractObjects": {
+      "title": "Contract objects",
+      "breadcrumb": "Contract objects",
+      "create": {
+        "title": "Create contract object",
+        "breadcrumb": "Create object"
+      },
+      "edit": {
+        "title": "Edit contract object",
+        "breadcrumb": "Edit object"
+      }
+    }
+  },
+  "products": {
+    "title": "Products",
+    "breadcrumb": "Products",
+    "list": {
+      "title": "Products list",
+      "breadcrumb": "Products"
+    },
+    "create": {
+      "title": "Create product",
+      "breadcrumb": "Create product"
+    },
+    "edit": {
+      "title": "Edit product",
+      "breadcrumb": "Edit product"
+    },
+    "detail": {
+      "title": "Product detail",
+      "breadcrumb": "Detail"
+    }
+  },
+  "fuec": {
+    "title": "FUEC",
+    "breadcrumb": "FUEC",
+    "emit": {
+      "title": "Issue FUEC",
+      "breadcrumb": "Issue FUEC"
+    },
+    "active": {
+      "title": "Active FUECs",
+      "breadcrumb": "Active FUECs"
+    },
+    "detail": {
+      "title": "FUEC detail",
+      "breadcrumb": "Detail"
+    },
+    "passengers": {
+      "title": "Passengers",
+      "breadcrumb": "Passengers",
+      "create": {
+        "title": "Add passenger",
+        "breadcrumb": "New passenger"
+      },
+      "edit": {
+        "title": "Edit passenger",
+        "breadcrumb": "Edit passenger"
+      }
+    }
+  },
+  "billing": {
+    "title": "Billing",
+    "breadcrumb": "Billing",
+    "resoluciones": {
+      "title": "DIAN resolutions",
+      "breadcrumb": "DIAN resolutions",
+      "list": {
+        "title": "Active resolutions",
+        "breadcrumb": "Resolutions"
+      },
+      "create": {
+        "title": "Create DIAN resolution",
+        "breadcrumb": "Create resolution"
+      },
+      "edit": {
+        "title": "Edit DIAN resolution",
+        "breadcrumb": "Edit resolution"
+      }
+    },
+    "prefijos": {
+      "title": "Prefixes & sequences",
+      "breadcrumb": "Prefixes",
+      "create": {
+        "title": "Create prefix",
+        "breadcrumb": "Create prefix"
+      },
+      "edit": {
+        "title": "Edit prefix",
+        "breadcrumb": "Edit prefix"
+      }
+    },
+    "invoices": {
+      "title": "Invoices",
+      "breadcrumb": "Invoices",
+      "emit": {
+        "title": "Issue invoice",
+        "breadcrumb": "Issue invoice"
+      },
+      "list": {
+        "title": "Invoices list",
+        "breadcrumb": "Invoices"
+      },
+      "detail": {
+        "title": "Line detail",
+        "breadcrumb": "Line detail"
+      },
+      "detailId": {
+        "title": "Invoice detail",
+        "breadcrumb": "Detail"
+      },
+      "taxes": {
+        "title": "Taxes",
+        "breadcrumb": "Taxes",
+        "create": {
+          "title": "Create tax",
+          "breadcrumb": "Create tax"
+        },
+        "edit": {
+          "title": "Edit tax",
+          "breadcrumb": "Edit tax"
+        }
+      }
+    },
+    "adjustmentNotes": {
+      "title": "Adjustment notes",
+      "breadcrumb": "Adjustment notes",
+      "creditNotes": {
+        "title": "Credit notes",
+        "breadcrumb": "Credit notes",
+        "create": {
+          "title": "Create credit note",
+          "breadcrumb": "New credit note"
+        },
+        "detail": {
+          "title": "Credit note detail",
+          "breadcrumb": "Detail"
+        }
+      },
+      "debitNotes": {
+        "title": "Debit notes",
+        "breadcrumb": "Debit notes",
+        "create": {
+          "title": "Create debit note",
+          "breadcrumb": "New debit note"
+        },
+        "detail": {
+          "title": "Debit note detail",
+          "breadcrumb": "Detail"
+        }
+      }
+    }
+  },
+  "finances": {
+    "title": "Finances",
+    "breadcrumb": "Finances",
+    "memberFees": {
+      "title": "Affiliate charges",
+      "breadcrumb": "Affiliate charges",
+      "adminFee": {
+        "title": "Administration fee",
+        "breadcrumb": "Administration fee",
+        "create": {
+          "title": "Register fee",
+          "breadcrumb": "New fee"
+        },
+        "edit": {
+          "title": "Edit fee",
+          "breadcrumb": "Edit fee"
+        }
+      },
+      "insuranceGps": {
+        "title": "Insurance & GPS",
+        "breadcrumb": "Insurance & GPS",
+        "create": {
+          "title": "Register insurance / GPS",
+          "breadcrumb": "New insurance/GPS"
+        },
+        "edit": {
+          "title": "Edit insurance / GPS",
+          "breadcrumb": "Edit insurance/GPS"
+        }
+      },
+      "finesLate": {
+        "title": "Fines & late fees",
+        "breadcrumb": "Fines & late fees",
+        "create": {
+          "title": "Register fine / late fee",
+          "breadcrumb": "New fine"
+        },
+        "edit": {
+          "title": "Edit fine / late fee",
+          "breadcrumb": "Edit fine"
+        }
+      }
+    },
+    "expenses": {
+      "title": "Operating expenses",
+      "breadcrumb": "Operating expenses",
+      "register": {
+        "title": "Expense register",
+        "breadcrumb": "Expense register",
+        "create": {
+          "title": "Register expense",
+          "breadcrumb": "New expense"
+        },
+        "edit": {
+          "title": "Edit expense",
+          "breadcrumb": "Edit expense"
+        }
+      },
+      "fuelTolls": {
+        "title": "Fuel & tolls",
+        "breadcrumb": "Fuel/Tolls",
+        "create": {
+          "title": "Register fuel / toll",
+          "breadcrumb": "New record"
+        },
+        "edit": {
+          "title": "Edit fuel / toll",
+          "breadcrumb": "Edit record"
+        }
+      },
+      "servicesRent": {
+        "title": "Services & rent",
+        "breadcrumb": "Services/Rent",
+        "create": {
+          "title": "Register service / rent",
+          "breadcrumb": "New record"
+        },
+        "edit": {
+          "title": "Edit service / rent",
+          "breadcrumb": "Edit record"
+        }
+      }
+    },
+    "disbursements": {
+      "title": "Disbursements",
+      "breadcrumb": "Disbursements",
+      "create": {
+        "title": "New disbursement voucher",
+        "breadcrumb": "New voucher"
+      },
+      "list": {
+        "title": "Vouchers list",
+        "breadcrumb": "Vouchers"
+      },
+      "detail": {
+        "title": "Voucher detail",
+        "breadcrumb": "Detail"
+      }
+    }
+  },
+  "procedures": {
+    "title": "Procedures",
+    "breadcrumb": "Procedures",
+    "operation": {
+      "title": "Op. procedure",
+      "breadcrumb": "Op. procedure",
+      "new": {
+        "title": "New request",
+        "breadcrumb": "New request"
+      },
+      "renewal": {
+        "title": "Renewal",
+        "breadcrumb": "Renewal"
+      },
+      "tracking": {
+        "title": "Procedure tracking",
+        "breadcrumb": "Tracking"
+      },
+      "detail": {
+        "title": "Procedure detail",
+        "breadcrumb": "Detail"
+      }
+    },
+    "validCards": {
+      "title": "Valid cards",
+      "breadcrumb": "Valid cards",
+      "list": {
+        "title": "Cards list",
+        "breadcrumb": "Valid cards"
+      },
+      "expiring": {
+        "title": "Expiring soon",
+        "breadcrumb": "Expiring soon"
+      },
+      "detail": {
+        "title": "Card detail",
+        "breadcrumb": "Detail"
+      }
+    }
+  },
+  "errors": {
+    "401": {
+      "title": "Unauthorized",
+      "message": "You need to sign in to access this resource."
+    },
+    "403": {
+      "title": "Access denied",
+      "message": "You don't have permission to access this resource."
+    },
+    "404": {
+      "title": "Page not found",
+      "message": "The page you are looking for doesn't exist or has been moved."
+    },
+    "500": {
+      "title": "Server error",
+      "message": "An internal error occurred. Please try again later."
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "noa-android",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:a11y": "node scripts/a11y-audit.js",
+    "test:perf": "node scripts/perf-budget.js",
+    "test": "node scripts/a11y-audit.js && node scripts/perf-budget.js",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/geolocation": "^8.2.0",
+    "@capacitor/ios": "^8.4.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@primeuix/themes": "^2.0.3",
+    "axios": "^1.16.1",
+    "dayjs": "^1.11.21",
+    "html2canvas": "^1.4.1",
+    "pinia": "^3.0.4",
+    "primevue": "^4.5.5",
+    "sweetalert2": "^11.26.25",
+    "vue": "^3.5.34",
+    "vue-i18n": "^11.4.4",
+    "vue-router": "^4.6.4",
+    "vue-toastification": "^2.0.0-rc.5"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.2",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.0.12"
+  }
+}
