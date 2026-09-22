@@ -43,6 +43,20 @@ jobs:
       - name: Install dependencias
         run: npm ci
 
+      - name: Sincronizar VITE_APP_VERSION con el tag
+        run: |
+          python3 - "${{ steps.ver.outputs.version }}" <<'PY'
+          import re, sys
+          version = sys.argv[1]
+          p = ".env.production"
+          s = open(p, encoding="utf-8").read()
+          s2, n = re.subn(r'^VITE_APP_VERSION=.*$', f'VITE_APP_VERSION="{version}"', s, flags=re.M)
+          if n == 0:
+              s2 = s.rstrip("\n") + f'\nVITE_APP_VERSION="{version}"\n'
+          open(p, "w", encoding="utf-8").write(s2)
+          print(f"VITE_APP_VERSION={version}")
+          PY
+
       - name: Build web produccion
         run: npm run build -- --mode production
 
@@ -51,7 +65,7 @@ jobs:
 
       - name: Inyectar versionCode/versionName
         run: |
-          python3 - "$VERSION" "${{ steps.ver.outputs.version_code }}" <<'PY'
+          python3 - "${{ steps.ver.outputs.version }}" "${{ steps.ver.outputs.version_code }}" <<'PY'
           import re, sys
           version, code = sys.argv[1], sys.argv[2]
           p = "android/app/build.gradle"

@@ -7,10 +7,19 @@ import { useConfigStore } from '@/store/modules/config.js';
 import Noatspinner from '@/components/Noatspinner.vue';
 import NavProgressBar from '@/components/NavProgressBar.vue';
 import { useAuthStore } from '@/store/modules/auth.js';
+import { useVersionUpdateStore } from '@/features/versionUpdate/store/versionUpdate.store.js';
+import VersionUpdateBanner from '@/components/VersionUpdateBanner.vue';
 
 const route = useRoute();
 const notificationsStore = useNotificationsStore();
 const configStore = useConfigStore();
+const versionUpdateStore = useVersionUpdateStore();
+
+const showVersionBanner = computed(() => {
+  if (route.path === '/login') return false;
+  if (configStore.isAppLoading) return false;
+  return versionUpdateStore.shouldOffer;
+});
 
 const layoutComponent = computed(() => {
   if (route.meta?.layout === 'dashboard') {
@@ -21,6 +30,8 @@ const layoutComponent = computed(() => {
 
 onMounted(() => {
   notificationsStore.startExpiryAlertInterval();
+  // Check de nueva versión: asíncrono, silencioso, con throttle de 6h en el store.
+  versionUpdateStore.check();
 });
 
 onUnmounted(() => {
@@ -99,6 +110,9 @@ const getInitialsLabel = (type) => {
     <router-view />
   </component>
   <router-view v-else />
+
+  <!-- Alerta de nueva versión (web y Android): no intrusiva, oculta en /login -->
+  <VersionUpdateBanner v-if="showVersionBanner" />
 
   <!-- Alertas temporales; el resumen vive junto a la campana en Navbar.vue -->
   <div class="expiry-notifications-hub">

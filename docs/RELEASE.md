@@ -60,3 +60,24 @@ Nunca commitear `*.jks`, `*.apk`, `android/build/`, `android/app/build/`, `andro
 `NOA-vX.Y.Z.apk` + `NOA-vX.Y.Z.apk.sha256.txt`. Sin espacios, sin "final",
 sin sufijos improvisados. Cada Release corresponde a un tag, cada tag a un
 commit en `main`: nada huérfano.
+
+## 8. Auto-update: alerta de nueva versión (web + Android)
+
+La app detecta sola cuando hay un Release nuevo y muestra un banner
+(`src/components/VersionUpdateBanner.vue`):
+
+- Fuente: `GET https://api.github.com/repos/solucionesintegralesmanasas/noa-android/releases/latest`
+  (servicio `src/services/versionUpdate.service.js`, fetch nativo sin auth).
+- Comparación semver contra la versión compilada (`VITE_APP_VERSION`,
+  expuesta en `src/utils/env.js` como `env.APP_VERSION`).
+- Throttle de 6 horas en `localStorage` (store
+  `src/features/versionUpdate/store/versionUpdate.store.js`).
+- El banner no aparece en `/login` ni mientras carga la app; el botón
+  "Después" lo oculta hasta el próximo check.
+- En web abre la descarga en el navegador. En Android descarga el APK con
+  `@capacitor/filesystem` y lo abre con FileOpener
+  (`@capacitor-community/file-opener`, dependencia opcional: si no está
+  instalada, cae al navegador); requiere el permiso
+  `REQUEST_INSTALL_PACKAGES` (ya declarado en el manifest).
+- El workflow sincroniza `VITE_APP_VERSION` con el tag antes del build:
+  sin ese paso la detección no funciona. No editar la versión a mano.
