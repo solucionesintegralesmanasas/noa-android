@@ -25,7 +25,10 @@ git push origin v1.0.1
 
 El workflow `.github/workflows/android-release.yml` hace: `npm ci` > `build --mode production` > `cap sync` > inyecta version > `assembleRelease` firmado > publica `NOA-vX.Y.Z.apk` + `.sha256.txt`.
 
-El cuerpo del Release se toma de la plantilla `.github/RELEASE_TEMPLATE.md` (ajustar version y seccion "Incluye" en cada version).
+El cuerpo del Release es obligatorio y se toma de la plantilla versionada
+`.github/RELEASE_TEMPLATE.md` (ajustar version y seccion "Incluye" en cada
+version). Ver `.github/COMMIT_CONVENTION.md`: prohibido improvisar el texto
+en el formulario web.
 
 Reglas de actualizacion Android:
 
@@ -35,14 +38,25 @@ Reglas de actualizacion Android:
 
 ## 4. Verificar antes de distribuir
 
+- Firma: `apksigner verify --print-certs` sin errores.
+- Identidad: `aapt dump badging` con `applicationId com.transportessinbarreras.noa`
+  y `versionCode` mayor al Release anterior.
 - Instalacion limpia en 1 dispositivo.
 - Actualizacion encima (vN > vN-1) sin desinstalar, con sesion iniciada.
-- Opcional local: `apksigner verify --print-certs android/app/build/outputs/apk/release/app-release.apk`.
 
 ## 5. Desarrollo local con Android Studio
 
-Sin keystore configurado, el `build.gradle` cae a firma debug y permite `Run`. Para probar firma release local, crear `android/release.keystore` (ignorado por git) y exportar las 4 variables `ANDROID_*`.
+El boton `Run` usa la variante `debug` (firma automática) y funciona sin
+keystore. La variante `release` exige el keystore: para probarla en local,
+crear `android/app/release.keystore` (ignorado por git) y exportar las 4
+variables `ANDROID_*`.
 
 ## 6. Que NO subir
 
 Nunca commitear `*.jks`, `*.apk`, `android/build/`, `android/app/build/`, `android/local.properties`, `dist/`. El APK solo vive como asset del Release.
+
+## 7. Naming estricto de assets
+
+`NOA-vX.Y.Z.apk` + `NOA-vX.Y.Z.apk.sha256.txt`. Sin espacios, sin "final",
+sin sufijos improvisados. Cada Release corresponde a un tag, cada tag a un
+commit en `main`: nada huérfano.
