@@ -2,8 +2,8 @@
   "fecha": "2026-09-25",
   "dist": true,
   "metricas": {
-    "totalJS": 2856.6,
-    "totalCSS": 277.5,
+    "totalJS": 2859,
+    "totalCSS": 277.4,
     "vendorPrimevue": 806.3,
     "vendorUI": null,
     "vendorFeedback": 76.3,
@@ -30,7 +30,7 @@
       "tipo": "js"
     },
     {
-      "archivo": "index-C0fmLCoB.js",
+      "archivo": "index-_VEZFhuA.js",
       "kb": 139.1,
       "tipo": "js"
     },
@@ -40,7 +40,7 @@
       "tipo": "js"
     },
     {
-      "archivo": "ServiceTemplateView-CSLOsq7O.js",
+      "archivo": "ServiceTemplateView-BlfBHh2Y.js",
       "kb": 95.1,
       "tipo": "js"
     },
@@ -50,17 +50,17 @@
       "tipo": "js"
     },
     {
-      "archivo": "DashboardView-CmgGnfKv.js",
+      "archivo": "DashboardView-CEwgxoxW.js",
       "kb": 61.7,
       "tipo": "js"
     },
     {
-      "archivo": "SystemConfigurationView-Vq_rmuU-.js",
+      "archivo": "SystemConfigurationView-Cm9ztJ2u.js",
       "kb": 54.3,
       "tipo": "js"
     },
     {
-      "archivo": "FuecFormView-_2tUTS-U.js",
+      "archivo": "FuecFormView-DEx4czl-.js",
       "kb": 52,
       "tipo": "js"
     },

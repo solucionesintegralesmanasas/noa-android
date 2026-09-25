@@ -1,91 +1,117 @@
 <template>
-  <div class="login-preview">
-    <div class="shape-bg s1"></div>
-    <div class="shape-bg s2"></div>
-    <div class="shape-bg s3"></div>
-    <div class="glass-card">
-      <div class="brand-panel">
-        <div class="logo-box">
-          <img src="/logo.svg" alt="NOA Transportes" class="brand-logo-img" width="1010" height="270" fetchpriority="high" decoding="async" />
+  <div class="login-screen">
+    <div class="login-app">
+      <!-- Hero de marca -->
+      <div class="hero">
+        <div class="hero-inner">
+          <div class="logo-area">
+            <div class="logo-wordmark">
+              <span class="logo-noa">NOA</span>
+              <div class="logo-slash" aria-hidden="true"></div>
+            </div>
+            <div class="logo-transportes">Transportes</div>
+          </div>
+
+          <div class="hero-pills" aria-hidden="true">
+            <span class="pill pill-erp">ERP</span>
+            <span class="pill pill-seg">Seguro</span>
+            <span class="pill pill-cloud">Cloud</span>
+          </div>
+
+          <p class="hero-tagline">Plataforma de gestión para flotas — eficiencia y control en un solo lugar</p>
         </div>
-        <p class="brand-desc">Plataforma de gestión ERP diseñada para eficiencia, seguridad y escalabilidad en tu
-          operación logística.</p>
-        <div class="brand-badges">
-          <span class="badge badge-blue">ERP</span>
-          <span class="badge badge-green">Seguro</span>
-          <span class="badge badge-sky">Cloud</span>
-        </div>
-        <div class="brand-terms">Términos y <span class="brand-terms-link" role="note">Condiciones</span></div>
+        <div class="hero-deco" aria-hidden="true"></div>
       </div>
-      <div class="form-panel">
-        <div class="form-head">
-          <h1 class="form-title-text">Iniciar Sesión</h1>
-          <p class="form-sub">Accede a NOA Transportes para gestionar tu flota</p>
-        </div>
-        <hr class="divider-line">
-        <form class="row g-3" @submit.prevent="handleLogin" novalidate>
-          <div class="col-12">
-            <div class="fgroup">
-              <label class="flabel" for="login-email">Correo Electrónico o Número de Documento</label>
-              <div class="iw">
-                <i class="fas fa-envelope iico" aria-hidden="true"></i>
-                <input
-                  id="login-email"
-                  class="finput"
-                  :class="{ 'finput-error': errors.email }"
-                  type="text"
-                  autocomplete="username"
-                  placeholder="nombre@empresa.com o documento"
-                  v-model="formData.email"
-                  :aria-invalid="!!errors.email"
-                  :aria-describedby="errors.email ? 'login-email-error' : undefined"
-                >
-              </div>
-              <span v-if="errors.email" id="login-email-error" class="ferror" role="alert">{{ errors.email }}</span>
+
+      <!-- Tarjeta de acceso -->
+      <div class="form-card">
+        <div class="form-title">Iniciar sesión</div>
+        <div class="form-sub">Accede para gestionar tu flota</div>
+        <div class="form-divider" aria-hidden="true"></div>
+
+        <form @submit.prevent="handleLogin" novalidate>
+          <div class="field">
+            <label class="field-label" for="login-email">Correo o número de documento</label>
+            <div class="input-wrap" :class="{ 'input-error': errors.email }">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input
+                id="login-email"
+                class="login-input"
+                type="text"
+                autocomplete="username"
+                placeholder="nombre@empresa.com o documento"
+                v-model="formData.email"
+                :aria-invalid="!!errors.email"
+                :aria-describedby="errors.email ? 'login-email-error' : undefined"
+              >
             </div>
+            <span v-if="errors.email" id="login-email-error" class="field-error" role="alert">{{ errors.email }}</span>
           </div>
-          <div class="col-12">
-            <div class="fgroup">
-              <div class="flabel-row">
-                <label class="flabel" for="login-password">Contraseña</label>
-                <span class="flink flink-disabled" aria-disabled="true" title="Recuperación de contraseña no disponible por el momento">¿Olvidaste tu contraseña?</span>
-              </div>
-              <div class="iw">
-                <i class="fas fa-lock iico" aria-hidden="true"></i>
-                <input
-                  id="login-password"
-                  class="finput finput-pw"
-                  :class="{ 'finput-error': errors.password }"
-                  :type="showPassword ? 'text' : 'password'"
-                  autocomplete="current-password"
-                  placeholder="••••••••"
-                  v-model="formData.password"
-                  :aria-invalid="!!errors.password"
-                  :aria-describedby="errors.password ? 'login-password-error' : undefined"
-                >
-                <button
-                  type="button"
-                  class="pw-toggle"
-                  :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                  @click="showPassword = !showPassword"
-                >
-                  <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" aria-hidden="true"></i>
-                </button>
-              </div>
-              <span v-if="errors.password" id="login-password-error" class="ferror" role="alert">{{ errors.password }}</span>
+
+          <div class="field">
+            <div class="field-label field-label-row">
+              <label for="login-password">Contraseña</label>
+              <button
+                type="button"
+                class="forgot"
+                disabled
+                aria-disabled="true"
+                title="Recuperación de contraseña no disponible por el momento"
+              >¿Olvidaste tu contraseña?</button>
             </div>
+            <div class="input-wrap" :class="{ 'input-error': errors.password }">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <input
+                id="login-password"
+                class="login-input"
+                :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                v-model="formData.password"
+                :aria-invalid="!!errors.password"
+                :aria-describedby="errors.password ? 'login-password-error' : undefined"
+              >
+              <button
+                type="button"
+                class="eye-btn"
+                :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                @click="showPassword = !showPassword"
+              >
+                <svg v-if="!showPassword" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="23" x2="23" y2="1"/></svg>
+              </button>
+            </div>
+            <span v-if="errors.password" id="login-password-error" class="field-error" role="alert">{{ errors.password }}</span>
           </div>
-          <div v-if="loginError" class="col-12">
-            <div class="alert-error" role="alert">{{ loginError }}</div>
-          </div>
-          <div class="col-12">
-            <button class="btn-main" type="submit" :disabled="isSubmitting">
-              <span v-if="isSubmitting" class="btn-spinner" aria-hidden="true"></span>
-              {{ isSubmitting ? 'Accediendo...' : 'Iniciar sesión' }}
-            </button>
-          </div>
+
+          <div v-if="loginError" class="alert-error" role="alert">{{ loginError }}</div>
+
+          <button class="btn-login" type="submit" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="btn-spinner" aria-hidden="true"></span>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+            {{ isSubmitting ? 'Accediendo...' : 'Iniciar sesión' }}
+          </button>
         </form>
+
+        <div class="biometric-row" aria-hidden="true">
+          <div class="bio-divider"></div>
+          <span class="bio-text">o continúa con</span>
+          <div class="bio-divider"></div>
+        </div>
+
+        <button class="bio-btn" type="button" @click="handleBiometric">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
+          Acceso biométrico
+        </button>
+
+        <div class="terms">
+          Al ingresar aceptas los
+          <button type="button" class="terms-link" @click="handleLegal('Términos y Condiciones')">Términos y Condiciones</button><br>y la
+          <button type="button" class="terms-link" @click="handleLegal('Política de Privacidad')">Política de Privacidad</button>
+        </div>
       </div>
+
+      <div class="bottom-pad" aria-hidden="true"></div>
     </div>
   </div>
 </template>
@@ -93,10 +119,11 @@
 <script setup>
 /**
  * @author Darwin Montes
- * @version 1.1.0
- * @created_at 2026-07-27
+ * @version 1.1.2
  * @module {Features.Auth}
  * @resource {Session}
+ * Diseño según mockup NOA-Transportes—Login-Mockup-Android (hero de marca,
+ * wordmark tipográfico, pills, form card, CTA con shimmer y acceso biométrico).
  */
 import { onMounted, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
@@ -104,6 +131,7 @@ import { useAuthStore } from '../store/auth.store.js';
 import { useFormManager } from '@/hooks/useFormManager.js';
 import { handleGlobalError } from '@/utils/error-handler.js';
 import { useConfigStore } from '@store/modules/config.js';
+import { toast } from '@/utils/toast.js';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -150,92 +178,363 @@ const handleLogin = async () => {
   }
 };
 
+/**
+ * Acceso biométrico aún no disponible en esta versión: se informa sin romper el flujo.
+ */
+const handleBiometric = () => {
+  toast('Acceso biométrico', 'El acceso con huella aún no está disponible en esta versión.', 'info');
+};
+
+/**
+ * Documentos legales aún no publicados en la app: se informa sin romper el flujo.
+ * @param {string} nombre - Nombre del documento solicitado.
+ */
+const handleLegal = (nombre) => {
+  toast(nombre, 'El documento aún no está disponible en esta versión.', 'info');
+};
+
 </script>
 
 <style scoped>
-.login-preview{font-family:'Outfit',sans-serif;--primary:#2c7be5;--primary-dark:#1a68d1;--accent:#00d27a;--sky:#00d2f4;background:linear-gradient(135deg,#f0f6ff 0%,#ffffff 50%,#f1f5f9 100%);border-radius:0;padding:clamp(1rem,4vw,3rem);min-height:100dvh;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
-.shape-bg{position:absolute;border-radius:50%;filter:blur(50px);pointer-events:none;}
-.s1{width:22%;min-width:180px;aspect-ratio:1;background:rgba(44,123,229,0.12);top:-6%;right:-4%;}
-.s2{width:18%;min-width:150px;aspect-ratio:1;background:rgba(0,210,122,0.09);bottom:-5%;left:-4%;}
-.s3{width:11%;min-width:100px;aspect-ratio:1;background:rgba(0,210,244,0.09);bottom:15%;right:8%;}
-.glass-card{background:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.95);border-radius:20px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.04),0 20px 50px -10px rgba(44,123,229,0.12),0 0 0 1px rgba(226,232,240,0.5);display:grid;grid-template-columns:1fr 1.1fr;width:100%;max-width:min(960px,100%);}
-@media (min-width: 1400px) {
-  .glass-card{max-width:1020px;}
+.login-screen {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #eef2f9;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
-.brand-panel{background:linear-gradient(160deg,rgba(44,123,229,0.04) 0%,rgba(0,210,244,0.025) 100%);padding:clamp(1.5rem,3vw,2.5rem) clamp(1rem,2.5vw,1.75rem);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border-right:1px solid #e2e8f0;position:relative;}
-.brand-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#2c7be5,#00d2f4,#00d27a);}
-.brand-panel::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(44,123,229,0.15),transparent);}
-.logo-box{width:100%;max-width:min(340px,80%);margin:0 auto clamp(0.75rem,2vw,1.5rem);display:flex;align-items:center;justify-content:center;min-height:clamp(72px,10vw,110px);}
-.brand-logo-img{width:clamp(200px,28vw,300px);height:auto;display:block;flex-shrink:0;}
-.brand-desc{color:#475569;font-size:clamp(0.8rem,1.5vw,0.875rem);line-height:1.65;margin:0 0 clamp(1rem,2.5vw,1.75rem);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
-.brand-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:clamp(1rem,2vw,1.5rem);}
-.badge{font-size:0.7rem;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:0.3px;}
-.badge-blue{background:rgba(44,123,229,0.1);color:#1a68d1;}
-.badge-green{background:rgba(0,210,122,0.1);color:#0a8a50;}
-.badge-sky{background:rgba(0,210,244,0.1);color:#0899b0;}
-.brand-terms{font-size:0.75rem;color:#64748b;}
-.brand-terms a{color:#1a68d1;text-decoration:none;font-weight:500;}
-.brand-terms-link{color:#1a68d1;font-weight:500;}
-.form-panel{padding:clamp(1.5rem,3.5vw,2.5rem) clamp(1rem,3vw,2rem);background:#fff;display:flex;flex-direction:column;justify-content:center;}
-.form-head{margin-bottom:clamp(1rem,2.5vw,1.5rem);}
-.form-title-text{font-size:clamp(1.25rem,2.5vw,1.6rem);font-weight:700;color:#0f172a;margin:0 0 0.35rem;}
-.form-sub{font-size:0.85rem;color:#64748b;margin:0;}
-.divider-line{height:1px;background:linear-gradient(90deg,rgba(44,123,229,0.3),rgba(0,210,244,0.2),transparent);margin:0 0 1.5rem;border:none;}
-.fgroup{margin-bottom:1.25rem;}
-.flabel-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;}
-.flabel{display:block;font-size:0.8rem;font-weight:600;color:#334155;letter-spacing:0.2px;margin-bottom:0.4rem;}
-.flabel-row .flabel{margin-bottom:0;}
-.flink{font-size:0.75rem;color:#1a68d1;text-decoration:none;font-weight:500;}
-.flink-disabled{cursor:not-allowed;opacity:0.8;}
-.flink:hover{text-decoration:underline;}
-.iw{position:relative;display:flex;align-items:center;}
-.iico{position:absolute;left:13px;color:#64748b;font-size:0.85rem;z-index:2;line-height:1;display:flex;align-items:center;}
-.finput{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px 10px 38px;color:#0f172a;font-size:0.9rem;font-family:'Outfit',sans-serif;box-sizing:border-box;transition:all 0.2s;}
-.finput:focus{outline:none;border-color:#2c7be5;background:#fff;box-shadow:0 0 0 3px rgba(44,123,229,0.35);}
-.finput:focus-visible{outline:2px solid #1a68d1;outline-offset:1px;}
-.finput::placeholder{color:#64748b;}
-.finput-pw{padding-right:38px;}
-.finput-error{border-color:#e5484d;background:#fef4f4;}
-.pw-toggle{position:absolute;right:10px;background:none;border:none;cursor:pointer;font-size:0.9rem;line-height:1;padding:4px;color:#64748b;display:flex;align-items:center;}
-.pw-toggle:hover{color:#2c7be5;}
-.ferror{display:block;font-size:0.75rem;color:#e5484d;margin-top:0.35rem;}
-.alert-error{background:#fef4f4;border:1px solid #f4b8ba;color:#c2222a;font-size:0.82rem;padding:10px 12px;border-radius:8px;}
-.btn-main{width:100%;padding:11px;background:linear-gradient(135deg,#2c7be5,#1a68d1);color:white;border:none;border-radius:10px;font-weight:700;font-size:0.95rem;margin-top:0.5rem;cursor:pointer;letter-spacing:0.2px;box-shadow:0 4px 16px rgba(44,123,229,0.35);font-family:'Outfit',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;}
-.btn-main:disabled{opacity:0.7;cursor:not-allowed;}
-.btn-main:focus-visible,.flink:focus-visible,.pw-toggle:focus-visible,.brand-terms a:focus-visible{outline:2px solid #2c7be5;outline-offset:2px;}
-@media (prefers-reduced-motion: reduce){
-  .btn-spinner{animation:none;}
-  .finput,.btn-main{transition:none;}
-}
-.btn-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-@media (max-width: 1024px) {
-  .glass-card{max-width:min(860px,100%);}
+.login-app {
+  width: min(480px, 100%);
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
 }
 
-@media (max-width: 768px) {
-  .glass-card {
-    grid-template-columns: 1fr;
-    max-width: min(520px,100%);
-  }
-  .brand-panel {
-    border-right: none;
-    border-bottom: 1px solid #e2e8f0;
-    padding: clamp(1.25rem,4vw,2rem) clamp(1rem,4vw,1.5rem);
-  }
-  .brand-desc{-webkit-line-clamp:2;}
-  .logo-box{min-height:64px;}
+/* ── Hero ── */
+.hero {
+  background: linear-gradient(160deg, #0c1f4a 0%, #0e2d6b 45%, #1a4db8 100%);
+  padding: 28px 28px 44px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56,130,246,.2) 0%, transparent 70%);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 10px; left: -40px;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16,185,205,.15) 0%, transparent 70%);
+}
+.hero-deco {
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 36px;
+  background: #eef2f9;
+  clip-path: ellipse(60% 100% at 50% 100%);
+}
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.logo-wordmark {
+  display: flex;
+  align-items: center;
+}
+.logo-noa {
+  font-size: 52px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -2px;
+  line-height: 1;
+  text-shadow: 0 2px 16px rgba(0,0,0,.3);
+}
+.logo-slash {
+  width: 4px;
+  height: 52px;
+  background: linear-gradient(to bottom, #38bdf8, #06b6d4);
+  border-radius: 2px;
+  transform: rotate(12deg);
+  margin: 0 6px;
+  box-shadow: 0 0 12px rgba(56,189,248,.5);
+}
+.logo-transportes {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .32em;
+  color: rgba(255,255,255,.5);
+  text-transform: uppercase;
+  margin-top: 2px;
+  padding-left: .32em;
+}
+.hero-pills {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: .03em;
+  backdrop-filter: blur(8px);
+}
+.pill-erp  { background: rgba(255,255,255,.12); color: #bfdbfe; border: 1px solid rgba(255,255,255,.15); }
+.pill-seg  { background: rgba(34,197,94,.15);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+.pill-cloud{ background: rgba(56,189,248,.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,.25); }
+.hero-tagline {
+  font-size: 13px;
+  color: rgba(255,255,255,.45);
+  text-align: center;
+  line-height: 1.5;
+  max-width: 240px;
+  margin: 0;
 }
 
-@media (max-width: 480px) {
-  .login-preview {
-    padding: 1rem;
-    align-items:flex-start;
-  }
-  .glass-card{border-radius:16px;}
-  .brand-badges {
-    margin-bottom: 0.75rem;
-  }
+/* ── Form card ── */
+.form-card {
+  background: #fff;
+  margin: -4px 16px 0;
+  border-radius: 24px;
+  padding: 28px 22px 24px;
+  box-shadow:
+    0 8px 32px rgba(14,45,107,.12),
+    0 1px 4px rgba(14,45,107,.08);
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+.form-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0c1f4a;
+  letter-spacing: -.5px;
+  margin-bottom: 4px;
+}
+.form-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+.form-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+  margin-bottom: 22px;
+}
+
+/* ── Campos ── */
+.field { margin-bottom: 18px; }
+.field-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+  display: block;
+}
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.field-label-row label { margin: 0; }
+.forgot {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+.forgot:disabled { cursor: not-allowed; opacity: .8; }
+.input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 13px 14px;
+  transition: border-color .2s, background-color .2s, box-shadow .2s;
+}
+.input-wrap:focus-within {
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+}
+.input-wrap.input-error {
+  border-color: #e5484d;
+  background: #fef4f4;
+}
+.input-wrap svg {
+  width: 17px; height: 17px;
+  stroke: #94a3b8;
+  flex-shrink: 0;
+}
+.login-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #1e293b;
+  padding: 0;
+}
+.login-input::placeholder { color: #94a3b8; }
+.eye-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: inherit;
+}
+.eye-btn svg { stroke: #cbd5e1; }
+.eye-btn:focus-visible, .forgot:focus-visible, .btn-login:focus-visible,
+.bio-btn:focus-visible, .terms-link:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+.field-error {
+  display: block;
+  font-size: 12px;
+  color: #e5484d;
+  margin-top: 6px;
+}
+.alert-error {
+  background: #fef4f4;
+  border: 1px solid #f4b8ba;
+  color: #c2222a;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+/* ── CTA ── */
+.btn-login {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  letter-spacing: .02em;
+  cursor: pointer;
+  margin-top: 6px;
+  box-shadow:
+    0 4px 14px rgba(37,99,235,.4),
+    0 1px 3px rgba(37,99,235,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-login::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+  transform: skewX(-20deg);
+}
+.btn-login svg { width: 17px; height: 17px; stroke: #fff; flex-shrink: 0; }
+.btn-login:disabled { opacity: .75; cursor: not-allowed; }
+.btn-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: login-spin .7s linear infinite;
+}
+@keyframes login-spin { to { transform: rotate(360deg); } }
+
+/* ── Biométrico ── */
+.biometric-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.bio-divider { flex: 1; height: 1px; background: #e2e8f0; }
+.bio-text { font-size: 11px; color: #cbd5e1; white-space: nowrap; }
+.bio-btn {
+  width: 100%;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.bio-btn svg { width: 18px; height: 18px; stroke: #475569; flex-shrink: 0; }
+
+/* ── Términos ── */
+.terms {
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 18px;
+  line-height: 1.5;
+}
+.terms-link {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: inherit;
+  font-family: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bottom-pad {
+  height: 28px;
+  background: #eef2f9;
+  flex-shrink: 0;
+  flex-grow: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-spinner { animation: none; }
+  .input-wrap { transition: none; }
 }
 </style>
