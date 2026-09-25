@@ -5,11 +5,7 @@
       <div class="hero">
         <div class="hero-inner">
           <div class="logo-area">
-            <div class="logo-wordmark">
-              <span class="logo-noa">NOA</span>
-              <div class="logo-slash" aria-hidden="true"></div>
-            </div>
-            <div class="logo-transportes">Transportes</div>
+            <img :src="logoUrl" alt="NOA Transportes" class="logo-img" width="1010" height="270" fetchpriority="high" decoding="async" />
           </div>
 
           <div class="hero-pills" aria-hidden="true">
@@ -132,6 +128,7 @@ import { useFormManager } from '@/hooks/useFormManager.js';
 import { handleGlobalError } from '@/utils/error-handler.js';
 import { useConfigStore } from '@store/modules/config.js';
 import { toast } from '@/utils/toast.js';
+import logoUrl from '@/assets/logo.svg';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -254,37 +251,12 @@ const handleLegal = (nombre) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
 }
-.logo-wordmark {
-  display: flex;
-  align-items: center;
-}
-.logo-noa {
-  font-size: 52px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -2px;
-  line-height: 1;
-  text-shadow: 0 2px 16px rgba(0,0,0,.3);
-}
-.logo-slash {
-  width: 4px;
-  height: 52px;
-  background: linear-gradient(to bottom, #38bdf8, #06b6d4);
-  border-radius: 2px;
-  transform: rotate(12deg);
-  margin: 0 6px;
-  box-shadow: 0 0 12px rgba(56,189,248,.5);
-}
-.logo-transportes {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .32em;
-  color: rgba(255,255,255,.5);
-  text-transform: uppercase;
-  margin-top: 2px;
-  padding-left: .32em;
+.logo-img {
+  width: min(220px, 72%);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 2px 16px rgba(0,0,0,.35));
 }
 .hero-pills {
   display: flex;
