@@ -200,7 +200,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useVehiclesStore } from '../store/vehicles.store.js';
-import { useAuthStore, useUserStore, usePermissionsStore } from '@store';
+import { usePermissionsStore } from '@store';
 import { useTable } from '@/hooks/useTable.js';
 import { useTableActions } from '@/hooks/useTableActions.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
@@ -208,19 +208,14 @@ import NoaTableSpinner from '@/components/NoaTableSpinner.vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Swal from 'sweetalert2';
-import VehiclesService from '../services/vehicles.service.js';
-import { toast } from '@/utils/toast.js';
 
 const router = useRouter();
 const route = useRoute();
 const store = useVehiclesStore();
-const authStore = useAuthStore();
-const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
 
 const isViewLoading = ref(true);
 const searchQuery = ref('');
-const downloadingPdfType = ref(null);
 
 const { debouncedSearch } = useTable({}, () => store.setGlobalFilter(searchQuery.value));
 const { confirmDelete, initTooltips, destroyTooltips } = useTableActions(store, router);
@@ -409,42 +404,6 @@ const handleChangeBranch = async (vehicle) => {
         }
     } catch (error) {
         console.error('Error al cambiar la sede:', error);
-    }
-};
-
-const generateVehicleHistoryPdf = async (data) => {
-    try {
-        downloadingPdfType.value = { uuid: data.uuid, type: 'history' };
-        await VehiclesService.downloadVehicleHistory(data.uuid);
-    } catch (error) {
-        console.error(error);
-        toast('Error', 'No se pudo generar el documento', 'error');
-    } finally {
-        downloadingPdfType.value = null;
-    }
-};
-
-const downloadTechnicalSheetPdf = async (data) => {
-    try {
-        downloadingPdfType.value = { uuid: data.uuid, type: 'technical-sheet' };
-        await VehiclesService.downloadTechnicalSheet(data.uuid);
-    } catch (error) {
-        console.error(error);
-        toast('Error', 'No se pudo generar el documento', 'error');
-    } finally {
-        downloadingPdfType.value = null;
-    }
-};
-
-const downloadMaintenanceHistoryPdf = async (data) => {
-    try {
-        downloadingPdfType.value = { uuid: data.uuid, type: 'maintenance-history' };
-        await VehiclesService.downloadMaintenanceHistory(data.uuid);
-    } catch (error) {
-        console.error(error);
-        toast('Error', 'No se pudo generar el documento', 'error');
-    } finally {
-        downloadingPdfType.value = null;
     }
 };
 

@@ -3,13 +3,13 @@
   "totales": {
     "langEnHtml": 0,
     "labelsSinFor": 91,
-    "controlesVModelSinId": 128,
+    "controlesVModelSinId": 129,
     "erroresSinRole": 0,
     "ariaLabelsIngles": 0,
     "roleButtonEnRouterLink": 0,
     "enlacesMuertos": 1,
     "aRoleButtonSinHref": 0,
-    "iconosSinAriaHidden": 934
+    "iconosSinAriaHidden": 961
   },
   "porArchivo": {
     "src\\components\\assistant\\BubbleChat.vue": {
@@ -17,7 +17,7 @@
       "iconosSinAriaHidden": 6
     },
     "src\\components\\layout\\Navbar.vue": {
-      "iconosSinAriaHidden": 2
+      "iconosSinAriaHidden": 1
     },
     "src\\components\\RuesLookupPanel.vue": {
       "labelsSinFor": 1,
@@ -92,7 +92,7 @@
       "iconosSinAriaHidden": 7
     },
     "src\\features\\companies\\views\\CompaniesDetailView.vue": {
-      "iconosSinAriaHidden": 20
+      "iconosSinAriaHidden": 17
     },
     "src\\features\\companies\\views\\CompaniesFormView.vue": {
       "iconosSinAriaHidden": 6
@@ -107,7 +107,7 @@
     },
     "src\\features\\controlSheets\\views\\ControlSheetsListView.vue": {
       "controlesVModelSinId": 1,
-      "iconosSinAriaHidden": 16
+      "iconosSinAriaHidden": 15
     },
     "src\\features\\conveyorCapacity\\views\\ConveyorCapacityFormView.vue": {
       "iconosSinAriaHidden": 3
@@ -119,8 +119,12 @@
     "src\\features\\dashboard\\components\\QuickActionsGrid.vue": {
       "iconosSinAriaHidden": 1
     },
-    "src\\features\\dashboard\\views\\ConductorDashboardView.vue": {
+    "src\\features\\dashboard\\views\\ConductorDashboardMobileView.vue": {
       "iconosSinAriaHidden": 2
+    },
+    "src\\features\\dashboard\\views\\ConductorDashboardView.vue": {
+      "controlesVModelSinId": 1,
+      "iconosSinAriaHidden": 33
     },
     "src\\features\\dashboard\\views\\DashboardView.vue": {
       "iconosSinAriaHidden": 13
@@ -207,7 +211,7 @@
       "iconosSinAriaHidden": 6
     },
     "src\\features\\projects\\views\\ProjectsDetailView.vue": {
-      "iconosSinAriaHidden": 19
+      "iconosSinAriaHidden": 18
     },
     "src\\features\\projects\\views\\ProjectsFormView.vue": {
       "controlesVModelSinId": 1,
@@ -239,12 +243,12 @@
     },
     "src\\features\\serviceDeliveryControlSheet\\views\\ServiceDeliveryControlSheetListView.vue": {
       "controlesVModelSinId": 2,
-      "iconosSinAriaHidden": 21
+      "iconosSinAriaHidden": 20
     },
     "src\\features\\serviceDeliveryControlSheet\\views\\ServiceTemplateView.vue": {
       "labelsSinFor": 34,
       "controlesVModelSinId": 29,
-      "iconosSinAriaHidden": 119
+      "iconosSinAriaHidden": 120
     },
     "src\\features\\systemConfiguration\\views\\PlatformFeesView.vue": {
       "iconosSinAriaHidden": 3

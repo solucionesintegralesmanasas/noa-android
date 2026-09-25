@@ -29,7 +29,7 @@ async function buildContext({ sessionUuid = null, vehicleUuid = null, projectUui
     // En desarrollo contra IP local, VITE_API_NATIVE_URL puede apuntar al dominio
     // público; si la app corre en http local se respeta igual la nativa configurada.
     if (!base.endsWith('/')) base += '/';
-    let token = '';
+    let token;
     try {
         token = (await tokenManager.getAccessToken()) || '';
     } catch {

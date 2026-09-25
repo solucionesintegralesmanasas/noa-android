@@ -28,7 +28,7 @@
 
                     <form v-else @submit.prevent="handleSubmit" class="row g-3" novalidate>
 
-                        <template v-if="formFuec && $can('fuec.create')" key="step-vehicle">
+                        <template v-if="formFuec && $can('fuec.create')">
                             <div class="col-12">
                                 <div class="alert alert-info border-0 d-flex align-items-center mb-0">
                                     <i class="fad fa-info-circle fs-4 me-3"></i>
@@ -65,7 +65,7 @@
                             </div>
                         </template>
 
-                        <template v-else key="step-form">
+                        <template v-else>
                             <!-- Campos ocultos -->
                             <div style="display: none;">
                                 <input type="hidden" v-model="formData.vehicle_uuid" />
@@ -449,10 +449,11 @@
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useFuecStore } from '../store/fuec.store.js';
-import { usePermissionsStore, useAuthStore } from '@store';
+import { useAuthStore } from '@store';
 import { useSystemConfigurationStore } from '@/features/systemConfiguration/store/systemConfiguration.store.js';
 import { useThirdPartiesStore } from '@/features/thirdParties/store/thirdParties.store.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import Swal from 'sweetalert2';
 import { dateUtils } from '@utils/date.js';
@@ -461,7 +462,6 @@ import { logger } from '@utils/logger.js';
 const route = useRoute();
 const router = useRouter();
 const store = useFuecStore();
-const permissionsStore = usePermissionsStore();
 const authStore = useAuthStore();
 const systemConfigStore = useSystemConfigurationStore();
 const thirdPartiesStore = useThirdPartiesStore();
@@ -647,11 +647,6 @@ const removePassenger = (index) => {
 const getDocumentTypeName = (uuid) => {
     const type = store.catalogs.documentTypes?.find(t => t.uuid === uuid);
     return type ? type.name : 'Desconocido';
-};
-
-const isDateExpired = (dateStr) => {
-    if (!dateStr) return false;
-    return dateUtils.dayjs(dateStr).isBefore(dateUtils.dayjs(), 'day');
 };
 
 const driverLicenseExpirations = reactive({

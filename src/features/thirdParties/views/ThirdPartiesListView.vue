@@ -591,11 +591,8 @@ import { useThirdPartiesStore } from '../store/thirdParties.store.js';
 import ThirdPartiesService from '../services/thirdParties.service.js';
 import { usePermissionsStore, useUserStore } from '@store';
 import { useTable } from '@/hooks/useTable.js';
-import { toast } from '@/utils/toast.js';
 import { useTableActions } from '@/hooks/useTableActions.js';
-import apiClient from '@/services/api/client.js';
 import Swal from 'sweetalert2';
-import dayjs from 'dayjs';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import NoaTableSpinner from '@/components/NoaTableSpinner.vue';
 import DataTable from 'primevue/datatable';
@@ -790,15 +787,6 @@ const newContribution = ref({
  * Muestra el formulario de registro cuando no hay aportes
  * o cuando el último aporte no es del mes actual.
  */
-const showContributionForm = computed(() => {
-    if (socialSecurityContributions.value.length === 0) return true;
-    const latest = socialSecurityContributions.value[0];
-    if (!latest.billing_period) return true;
-    const latestPeriod = latest.billing_period.substring(0, 7);
-    const currentMonth = dayjs().format('YYYY-MM');
-    return latestPeriod !== currentMonth;
-});
-
 const loadLicensesForModal = async (uuid) => {
     isLoadingLicenses.value = true;
     try {
@@ -1045,22 +1033,6 @@ const submitEditContribution = async () => {
         console.error('Error actualizando aporte', err);
     } finally {
         isSubmittingContribution.value = false;
-    }
-};
-
-const isDownloadingPdf = ref({});
-
-const downloadTechnicalSheetPdf = async (data) => {
-    const uuid = data.uuid;
-    const companyUuid = data.company_uuid;
-    isDownloadingPdf.value[uuid] = true;
-    try {
-        await ThirdPartiesService.downloadTechnicalSheet(uuid, companyUuid);
-    } catch (error) {
-        console.error(error);
-        toast('Error', 'No se pudo generar o descargar el documento.', 'error');
-    } finally {
-        isDownloadingPdf.value[uuid] = false;
     }
 };
 

@@ -99,24 +99,20 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useVehicleDocumentsStore } from '../store/vehicleDocuments.store.js';
-import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import Swal from 'sweetalert2';
 
 
 /** Computed para BasePageHeader (evita expresiones complejas en el template) */
-const pageSubtitle = computed(() => isViewLoading ? '' : 'Detalle completo del registro');
+const pageSubtitle = computed(() => isViewLoading.value ? '' : 'Detalle completo del registro');
 const breadcrumbs = computed(() => [ { label: 'Documentos', to: getBackRoute(), }, { label: 'Perfil' }, ]);
 
 const route = useRoute();
 const router = useRouter();
 const store = useVehicleDocumentsStore();
-const permissionsStore = usePermissionsStore();
 
 const item = computed(() => store.selectedItem || {});
 const isViewLoading = ref(true);
-
-const can = (action) => permissionsStore.can(action);
 
 const getDocumentTypeTitle = (documentType) => {
     switch (documentType) {
@@ -137,14 +133,7 @@ const getBackRoute = () => {
     return '/vehiculos-documentos';
 };
 
-const getEditRoute = () => {
-    const type = route.params.documentType;
-    if (type) return `/vehiculos-documentos/${type}/editar/${route.params.id}`;
-    return `/vehiculos-documentos/editar/${route.params.id}`;
-};
-
 const goBack = () => router.push(getBackRoute());
-const goToEdit = () => router.push(getEditRoute());
 
 onMounted(async () => {
     isViewLoading.value = true;

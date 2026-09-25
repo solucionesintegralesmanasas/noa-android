@@ -1,6 +1,5 @@
 import { usePermissionsStore } from "@store/modules/permissions.js";
 import { useAuthStore } from "@store/modules/auth.js";
-import { logger } from "@utils/logger.js";
 
 export async function permissionsGuard(to, from, next) {
     const { roles, permissions, any } = to.meta;

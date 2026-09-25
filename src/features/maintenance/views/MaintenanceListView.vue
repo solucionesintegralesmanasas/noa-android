@@ -174,7 +174,6 @@ import NoaTableSpinner from '@/components/NoaTableSpinner.vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Swal from 'sweetalert2';
-import apiClient from '@/services/api/client.js';
 import dateUtils from '@/utils/date.js';
 
 const router = useRouter();

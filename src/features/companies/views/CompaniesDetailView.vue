@@ -464,18 +464,6 @@ const breadcrumbs = computed(() => [
     { label: company.value?.business_name || 'Detalle' }
 ]);
 
-const statusBadgeClass = computed(() =>
-    company.value.status === 1 ? 'badge-subtle-success' : 'badge-subtle-danger'
-);
-
-const statusLabel = computed(() =>
-    company.value.status === 1 ? 'Activo' : 'Inactivo'
-);
-
-const statusIconClass = computed(() =>
-    company.value.status === 1 ? 'fa-check-circle' : 'fa-times-circle'
-);
-
 const cityLabel = computed(() => {
     const city = company.value.city;
     if (!city?.name) return '—';
@@ -530,45 +518,6 @@ const getFileIcon = (file) => {
         xls: 'fa-file-excel text-success', xlsx: 'fa-file-excel text-success'
     };
     return `fad ${icons[ext] || 'fa-file text-muted'}`;
-};
-
-// ===== SWEETALERT2: ELIMINAR =====
-const confirmDelete = async () => {
-    const name = company.value.business_name || 'esta empresa';
-    const result = await Swal.fire({
-        title: '¿Eliminar empresa?',
-        html: `<p class="mb-2">¿Seguro de eliminar <strong>"${name}"</strong>?</p>
-               <div class="alert alert-warning small mb-0 mt-2">
-                   <i class="fad fa-exclamation-triangle me-1"></i>
-                   Se eliminarán sucursales y datos asociados.
-               </div>`,
-        icon: 'warning', showCancelButton: true,
-        confirmButtonText: '<i class="fad fa-trash-alt me-1"></i>Sí, eliminar',
-        cancelButtonText: '<i class="fad fa-times me-1"></i>Cancelar',
-        confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
-        reverseButtons: true, focusCancel: true,
-        customClass: { popup: 'rounded-3 shadow', confirmButton: 'rounded-pill px-4', cancelButton: 'rounded-pill px-4' }
-    });
-
-    if (result.isConfirmed) {
-        try {
-            const id = company.value.uuid || company.value.id || route.params.id;
-            if (id) {
-                await store.deleteItem(id);
-                await Swal.fire({
-                    title: '¡Eliminada!', text: `"${name}" eliminada correctamente.`,
-                    icon: 'success', timer: 2000, showConfirmButton: false, toast: true, position: 'top-end'
-                });
-                goBack();
-            }
-        } catch (error) {
-            console.error('Error al eliminar:', error);
-            await Swal.fire({
-                title: 'Error', text: error.response?.data?.message || 'No se pudo eliminar.',
-                icon: 'error', confirmButtonColor: '#dc3545', customClass: { popup: 'rounded-3', confirmButton: 'rounded-pill px-4' }
-            });
-        }
-    }
 };
 
 // ===== NAVEGACIÓN =====

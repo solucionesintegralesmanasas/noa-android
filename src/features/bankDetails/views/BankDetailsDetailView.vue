@@ -159,27 +159,23 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useBankDetailsStore } from '../store/bankDetails.store.js';
-import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import Swal from 'sweetalert2';
 
 
 /** Computed para BasePageHeader (evita expresiones complejas en el template) */
 const pageTitle = computed(() => 'Perfil de ' + 'Datos Bancarios');
-const pageSubtitle = computed(() => isViewLoading ? '' : 'Detalle completo de la cuenta bancaria');
+const pageSubtitle = computed(() => isViewLoading.value ? '' : 'Detalle completo de la cuenta bancaria');
 const breadcrumbs = computed(() => [ { label: 'Datos Bancarios', to: '/empresas/datos-bancarios', }, { label: 'Perfil' }, ]);
 
 const route = useRoute();
 const router = useRouter();
 const store = useBankDetailsStore();
-const permissionsStore = usePermissionsStore();
 
 const item = computed(() => store.selectedItem || {});
 const isViewLoading = ref(true);
 
-const can = (action) => permissionsStore.can(action);
 const goBack = () => router.push('/empresas/datos-bancarios');
-const goToEdit = () => router.push(`/empresas/datos-bancarios/editar/${route.params.id}`);
 
 const capitalize = (str) => {
     if (!str) return '';

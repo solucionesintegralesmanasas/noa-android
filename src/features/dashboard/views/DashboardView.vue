@@ -1,7 +1,12 @@
 <template>
+    <!-- Vista móvil solo para conductor en Android nativo (mockup Capacitor) -->
+    <ConductorDashboardMobileView
+        v-if="esMovilAndroidConductor"
+    />
+
     <!-- Vista especializada para el rol Conductor -->
     <ConductorDashboardView
-        v-if="isConductorMode"
+        v-else-if="isConductorMode"
     />
 
     <!-- Vista de administración general -->
@@ -311,6 +316,8 @@ import { useDashboardStore } from '../store/dashboard.store';
 import { useTrackingStore } from '@/features/tracking/store/tracking.store';
 import DriverMap from '@/features/tracking/components/DriverMap.vue';
 import ConductorDashboardView from './ConductorDashboardView.vue';
+import ConductorDashboardMobileView from './ConductorDashboardMobileView.vue';
+import { usePlatform } from '@/hooks/usePlatform.js';
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -318,6 +325,7 @@ const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
 const dashboardStore = useDashboardStore();
 const trackingStore = useTrackingStore();
+const { esAndroidNativo } = usePlatform();
 
 // ── CONTROL DE ROL Y MODO CONDUCTOR ─────────────────────────
 const isConductorRole = computed(() => {
@@ -335,6 +343,14 @@ const isConductorMode = computed(() => {
     if (route.query.view === 'conductor') return true;
     if (route.query.view === 'admin') return false;
     return isConductorRole.value;
+});
+
+// Solo Android nativo o modo móvil usa la vista compacta del mockup Capacitor.
+const esMovilAndroidConductor = computed(() => {
+    if (route.query.view === 'admin') return false;
+    const esModoConductor = isConductorRole.value || route.query.view === 'conductor';
+    const esPlataformaMovil = esAndroidNativo.value || route.query.view === 'conductor' || (window.innerWidth <= 768 && isConductorRole.value);
+    return esPlataformaMovil && esModoConductor;
 });
 
 // ── ESTADO GENERAL ──────────────────────────────────────────

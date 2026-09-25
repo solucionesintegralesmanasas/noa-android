@@ -1,6 +1,5 @@
 import { BaseService } from "@services/api/base.service.js";
 import { validateSchema } from "@utils/validation.js";
-import { logger } from "@utils/logger.js";
 
 export class UserService extends BaseService {
     constructor(tenantId = null) {
@@ -8,7 +7,7 @@ export class UserService extends BaseService {
     }
 
     async create(data) {
-        const { valid, sanitized, errors } = validateSchema(data, {
+        const { valid, sanitized } = validateSchema(data, {
             email: { type: "email", required: true },
             firstName: { type: "string", required: true },
             lastName: { type: "string", required: true }

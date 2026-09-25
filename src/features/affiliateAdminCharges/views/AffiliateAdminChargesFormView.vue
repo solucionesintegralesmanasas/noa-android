@@ -312,6 +312,7 @@ import { useAffiliateAdminChargesStore } from '../store/affiliateCharges.store.j
 import { usePermissionsStore, useUserStore } from '@store';
 import { useSystemConfigurationStore } from '@/features/systemConfiguration/store/systemConfiguration.store.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import VehiclesService from '@/features/vehicles/services/vehicles.service.js';
 
 const route = useRoute();

@@ -615,7 +615,6 @@ import FuecService from '@/features/fuec/services/fuec.service.js';
 import getMediaUrl from '@/utils/media.js';
 
 // ===== CONFIGURACIÓN MTC =====
-const OFFICIAL_DOMAIN = import.meta.env.VITE_MTC_OFFICIAL_URL || 'https://fuec.mintransporte.gov.co';
 const ministryResolution = ref(import.meta.env.VITE_MTC_RESOLUTION || '202330400815');
 
 // ===== PROPS =====
@@ -716,11 +715,6 @@ const formatDate = (dateStr, withTime = false) => {
 const formatDateShort = (dateStr) => {
     if (!dateStr) return '-';
     return dateUtils.dayjs(dateStr).locale('es').format('DD/MM/YYYY');
-};
-
-const formatNumber = (value) => {
-    if (value === null || value === undefined || value === '') return '-';
-    return new Intl.NumberFormat('es-CO').format(value);
 };
 
 // ===== UTILIDADES VISUALES =====

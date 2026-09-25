@@ -5,12 +5,6 @@
 
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Select from 'primevue/select';
-import MultiSelect from 'primevue/multiselect';
-import Button from 'primevue/button';
-import Menu from 'primevue/menu';
 
 const primeVueOptions = {
     ripple: true,
@@ -42,12 +36,7 @@ const primeVueOptions = {
 export function installPrimeVue(app) {
     app.use(PrimeVue, primeVueOptions);
 
-    // Registro global de componentes base para evitar imports repetitivos en vistas
-    // (solo los usados en varias vistas; Dialog se importa directo donde se usa)
-    app.component('DataTable', DataTable);
-    app.component('Column', Column);
-    app.component('PrimeSelect', Select);
-    app.component('PrimeMultiSelect', MultiSelect);
-    app.component('PButton', Button);
-    app.component('Menu', Menu);
+    // Sin registro global de componentes (ARQ-013 paso 2): cada vista importa
+    // localmente lo que usa (DataTable/Column, Select, MultiSelect, Button,
+    // Menu, Dialog, Image) para que viajen en chunks diferidos, no en el arranque.
 }

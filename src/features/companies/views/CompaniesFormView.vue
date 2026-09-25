@@ -351,12 +351,13 @@ import { toast } from '@/utils/toast.js';
  * @module {Features.Companies}
  * @resource {Company}
  */
-import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCompaniesStore } from '../store/companies.store.js';
 import { usePermissionsStore } from '@store';
 import { useUserStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import RuesLookupPanel from '@/components/RuesLookupPanel.vue';
 
@@ -532,7 +533,7 @@ onMounted(async () => {
             }
         }
     } catch (e) {
-
+        // Carga fallida: se informa con toast en el llamador; aquí solo se libera el estado.
     } finally {
         isViewLoading.value = false;
         await nextTick();

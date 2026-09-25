@@ -102,7 +102,7 @@
  * @property {number} [lineHeight=16] - Altura px de línea (lines)
  * @property {string[]} [lineWidths] - Ciclo de anchos de línea (lines)
  */
-const props = defineProps({
+defineProps({
     type:          { type: String, default: 'table' },
     columns:       { type: Array,  default: () => ['30%', '20%', '20%', '15%', '15%'] },
     rows:          { type: Number, default: 10 },

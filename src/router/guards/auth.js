@@ -1,7 +1,5 @@
 import { useAuthStore } from "@store/modules/auth.js";
-import { useUserStore } from "@store/modules/user.js";
 import { usePermissionsStore } from "@store/modules/permissions.js";
-import { logger } from "@utils/logger.js";
 import { handleGlobalError } from "@utils/error-handler.js";
 
 // Sustituimos ROUTES por rutas directas o constantes locales
@@ -15,7 +13,7 @@ function getDashboardRoute() {
         if (permStore.hasRole && permStore.hasRole('CONDUCTOR')) {
             return CONDUCTOR_DASHBOARD_ROUTE;
         }
-    } catch {}
+    } catch { /* Sin permisos legibles: se usa la ruta por defecto. */ }
     return DASHBOARD_ROUTE;
 }
 
@@ -52,7 +50,7 @@ export async function authGuard(to, from, next) {
                 if (permStore.hasRole && permStore.hasRole('CONDUCTOR')) {
                     return next({ path: CONDUCTOR_DASHBOARD_ROUTE });
                 }
-            } catch {}
+            } catch { /* Sin permisos legibles: se continúa al destino original. */ }
         }
 
         next();

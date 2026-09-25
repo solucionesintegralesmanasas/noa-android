@@ -108,7 +108,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAffiliateAdminChargesStore } from '../store/affiliateCharges.store.js';
-import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import Swal from 'sweetalert2';
 import dayjs from 'dayjs';
@@ -116,20 +115,17 @@ import dayjs from 'dayjs';
 
 /** Computed para BasePageHeader (evita expresiones complejas en el template) */
 const pageTitle = computed(() => 'Perfil de ' + 'Cuota de Administración');
-const pageSubtitle = computed(() => isViewLoading ? '' : 'Detalle completo del registro');
+const pageSubtitle = computed(() => isViewLoading.value ? '' : 'Detalle completo del registro');
 const breadcrumbs = computed(() => [ { label: 'Cuotas de Administración', to: '/pagos-de-administracion', }, { label: 'Perfil' }, ]);
 
 const route = useRoute();
 const router = useRouter();
 const store = useAffiliateAdminChargesStore();
-const permissionsStore = usePermissionsStore();
 
 const item = computed(() => store.selectedItem || {});
 const isViewLoading = ref(true);
 
-const can = (action) => permissionsStore.can(action);
 const goBack = () => router.push('/pagos-de-administracion');
-const goToEdit = () => router.push(`/pagos-de-administracion/editar/${route.params.id}`);
 
 // Helpers
 const formatCurrency = (amount, currency) => {

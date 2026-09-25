@@ -165,9 +165,7 @@ import { useBusinessCollaborationAgreementsStore } from '../store/businessCollab
 import { usePermissionsStore } from '@store';
 import { useTable } from '@/hooks/useTable.js';
 import { useTableActions } from '@/hooks/useTableActions.js';
-import { useAuthStore } from '@/store/modules/auth.js';
 import BusinessCollaborationAgreementsService from '../services/businessCollaborationAgreements.service.js';
-import apiClient from '@/services/api/client.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import NoaTableSpinner from '@/components/NoaTableSpinner.vue';
 import DataTable from 'primevue/datatable';

@@ -46,6 +46,7 @@ export const useAssistantStore = defineStore('assistant', () => {
                 return;
             }
         } catch (_) {
+            // Sin sesión previa recuperable: se continúa y se crea una nueva abajo.
         }
 
         try {

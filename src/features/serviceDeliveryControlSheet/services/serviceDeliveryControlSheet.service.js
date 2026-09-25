@@ -82,7 +82,7 @@ class ServiceDeliveryControlSheetService extends BaseService {
      * Obtiene las opciones de los catálogos relacionados (Empresas, Vehículos, Conductores).
      * @returns {Promise<Object>} Objeto con los arreglos de opciones.
      */
-    async getFormOptions(companyUuid) {
+    async getFormOptions(companyUuid, thirdPartyUuid = null) {
         // Timeout acotado (15s): un catálogo colgado no debe bloquear la vista 30s.
         const fetchSafe = async (url) => {
             try {
@@ -102,11 +102,14 @@ class ServiceDeliveryControlSheetService extends BaseService {
             fetchSafe('contract-extract/fuecs/list'),
         ]);
 
-        // Si se proporciona companyUuid, también cargar proyectos de esa empresa
+        // Si se proporciona companyUuid, también cargar proyectos de esa empresa.
+        // Si se proporciona thirdPartyUuid (conductor), solo se traen sus proyectos asignados.
         let projects = [];
         if (companyUuid) {
             try {
-                const res = await this._getInstance().get(`projects/list?company_uuid=${companyUuid}`, { timeout: 15000 });
+                const params = new URLSearchParams({ company_uuid: companyUuid });
+                if (thirdPartyUuid) params.append('third_party_uuid', thirdPartyUuid);
+                const res = await this._getInstance().get(`projects/list?${params.toString()}`, { timeout: 15000 });
                 projects = res.data?.data ?? res.data ?? [];
             } catch (err) {
                 console.warn('Error cargando proyectos', err.message);
@@ -127,12 +130,16 @@ class ServiceDeliveryControlSheetService extends BaseService {
      * Obtiene el listado de proyectos para una empresa.
      * Usa instancia directa porque no cuelga del resourcePath de planillas.
      * @param {string} companyUuid - UUID de la empresa.
+     * @param {string|null} thirdPartyUuid - UUID del conductor para filtrar solo sus proyectos asignados.
      * @returns {Promise<Array>} Lista de proyectos.
      */
-    async listProjects(companyUuid) {
+    async listProjects(companyUuid, thirdPartyUuid = null) {
         try {
-            const url = companyUuid ? `projects/list?company_uuid=${companyUuid}` : 'projects/list';
-            const res = await this._getInstance().get(url, { timeout: 15000 });
+            const params = new URLSearchParams();
+            if (companyUuid) params.append('company_uuid', companyUuid);
+            if (thirdPartyUuid) params.append('third_party_uuid', thirdPartyUuid);
+            const query = params.toString() ? `projects/list?${params.toString()}` : 'projects/list';
+            const res = await this._getInstance().get(query, { timeout: 15000 });
             return res.data?.data ?? res.data ?? [];
         } catch (err) {
             console.warn('Error cargando proyectos', err.message);

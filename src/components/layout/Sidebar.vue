@@ -445,7 +445,6 @@ import { useRoute } from 'vue-router';
 import { useAuthStore, usePermissionsStore, useUserStore } from '@store';
 import NoaBadge from '@/components/NoaBadge.vue';
 import { useSidebar } from '@/hooks/useSidebar.js';
-import { getMediaUrl } from '@/utils/media.js';
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -470,8 +469,6 @@ const showSidebar = computed(() => {
     if (isConductorDashboard.value) return false;
     return true;
 });
-const companyLogo = computed(() => getMediaUrl(userStore.logo));
-
 const closeMobileSidebar = () => {
     const collapseEl = document.getElementById('navbarVerticalCollapse');
     if (collapseEl && collapseEl.classList.contains('show')) {

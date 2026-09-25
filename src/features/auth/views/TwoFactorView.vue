@@ -61,11 +61,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../store/auth.store.js';
 import { useFormManager } from '@/hooks/useFormManager.js';
 
 const router = useRouter();
-const authStore = useAuthStore();
 const isSmallMobile = ref(window.innerWidth <= 375);
 
 const { formData, errors, isSubmitting, validateAndFocus } = useFormManager(

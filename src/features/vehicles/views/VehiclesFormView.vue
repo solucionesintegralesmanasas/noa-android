@@ -526,6 +526,7 @@ import { useVehiclesStore } from '../store/vehicles.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
 import { useDocumentWizard } from '@/hooks/useDocumentWizard.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import WizardProgress from '@/components/WizardProgress.vue';
 
@@ -593,8 +594,6 @@ const formData = reactive({
     }
 });
 
-const filePreviews = reactive({});
-
 const validateField = (field, value, message) => {
     if (value === null || value === undefined || String(value).trim() === '') {
         validationErrors[field] = message;
@@ -648,14 +647,6 @@ const validateForm = () => {
 };
 
 const goBack = () => router.push('/vehiculos');
-
-const onFileChange = (event, field) => {
-    const file = event.target.files[0];
-    if (file) {
-        formData[field] = file;
-        filePreviews[field] = URL.createObjectURL(file);
-    }
-};
 
 const handleSubmit = async () => {
     if (!validateForm()) {

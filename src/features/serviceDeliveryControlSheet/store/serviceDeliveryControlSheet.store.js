@@ -21,7 +21,7 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
         projects: [],
         projectDetail: null,
         projectFilter: '',
-        soloCerradas: true,
+        soloCerradas: false,
         pagination: { currentPage: 1, itemsPerPage: 10, totalItems: 0, totalPages: 0 },
         search: '',
     }),
@@ -76,12 +76,14 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
          * Carga los catálogos necesarios para los formularios.
          * @returns {Promise<Object>} Catálogos cargados.
          */
-        async loadCatalogs(companyUuid) {
+        async loadCatalogs(companyUuid, thirdPartyUuid = null) {
             this.loading = true;
             try {
-                const catalogs = await serviceDeliveryControlSheetService.getFormOptions(companyUuid);
+                const catalogs = await serviceDeliveryControlSheetService.getFormOptions(companyUuid, thirdPartyUuid);
                 this.catalogs = catalogs;
-                if (catalogs.projects?.length) this.projects = catalogs.projects;
+                // Asignar siempre (incluso vacío): evita mostrar proyectos
+                // obsoletos de otra sesión cuando el conductor no tiene ninguno.
+                if (Array.isArray(catalogs.projects)) this.projects = catalogs.projects;
                 return catalogs;
             } catch (error) {
                 await toast('Advertencia', 'No se pudieron cargar algunas opciones del formulario.', 'warning');
@@ -91,9 +93,9 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
             }
         },
 
-        async loadProjects(companyUuid) {
+        async loadProjects(companyUuid, thirdPartyUuid = null) {
             try {
-                const list = await serviceDeliveryControlSheetService.listProjects(companyUuid);
+                const list = await serviceDeliveryControlSheetService.listProjects(companyUuid, thirdPartyUuid);
                 this.projects = Array.isArray(list) ? list : [];
                 return this.projects;
             } catch (error) {
@@ -112,7 +114,7 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
                 return null;
             }
         },
-        loadFormOptions(companyUuid) { return this.loadCatalogs(companyUuid); },
+        loadFormOptions(companyUuid, thirdPartyUuid = null) { return this.loadCatalogs(companyUuid, thirdPartyUuid); },
         setProjectFilter(uuid) { this.projectFilter = uuid || ''; this.pagination.currentPage = 1; return this.fetchItems(); },
 
         /**

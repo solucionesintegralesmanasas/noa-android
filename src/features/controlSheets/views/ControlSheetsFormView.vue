@@ -204,6 +204,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useControlSheetsStore } from '../store/controlSheets.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import Swal from 'sweetalert2';
 
@@ -234,8 +235,6 @@ const formData = reactive({
     observations: '',
     is_active: '1',
 });
-
-const filePreviews = reactive({});
 
 const pdfs = ref([]);
 const selectedFiles = ref([]);

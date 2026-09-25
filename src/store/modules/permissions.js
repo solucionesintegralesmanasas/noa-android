@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { rbac } from "@services/security/permissions/rbac.js";
 import { defineAbilities } from "@services/security/permissions/abilities.js";
-import { logger } from "@utils/logger.js";
 import { permissionsPersistencePlugin } from "@store/plugins/persistence.js";
 
 export const usePermissionsStore = defineStore("permissions", {

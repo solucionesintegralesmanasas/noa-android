@@ -1,9 +1,11 @@
 <template>
-    <BasePageHeader :title="'Inspecciones Vehiculares'" description="Gestión del módulo en el sistema."
-        icon="fad fa-clipboard-list text-primary" :show-refresh="true" :show-create="true" :show-bg="true"
-        :loading="isViewLoading || store.loading" :compact="true"
-        :breadcrumbs="[{ label: 'Inspecciones' }, { label: 'Listado' }]" @refresh="refreshTable"
-        @create="goToCreate" />
+    <!-- VISTA ESCRITORIO / TABLET -->
+    <div class="d-none d-md-block">
+        <BasePageHeader :title="'Inspecciones Vehiculares'" description="Gestión del módulo en el sistema."
+            icon="fad fa-clipboard-list text-primary" :show-refresh="true" :show-create="true" :show-bg="true"
+            :loading="isViewLoading || store.loading" :compact="true"
+            :breadcrumbs="[{ label: 'Inspecciones' }, { label: 'Listado' }]" @refresh="refreshTable"
+            @create="goToCreate" />
 
     <!-- STATS CARDS -->
     <div class="row g-3 mb-3 fade-in-up" style="animation-delay: 0.15s;" v-if="!isViewLoading">
@@ -127,7 +129,8 @@
 
                 <!-- DATATABLE (Paginación Server-Side) -->
                 <div v-else class="card-body p-0">
-                    <div class="table-responsive scrollbar">
+                    <!-- Vista Escritorio / Tablet Grande -->
+                    <div class="table-responsive scrollbar d-none d-md-block">
                         <DataTable :value="store.recentInspections" lazy :paginator="true"
                             :rows="store.pagination.itemsPerPage" :totalRecords="store.pagination.totalItems" :first="(store.pagination.currentPage - 1) *
                                 store.pagination.itemsPerPage
@@ -222,6 +225,91 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- VISTA MÓVIL ANDROID CAPACITOR (Pantalla completa de borde a borde) -->
+    <div class="d-md-none w-100 px-1 pt-1 pb-3 mobile-inspection-feed">
+        <MobileSectionHeader
+            title="Inspecciones Preoperacionales"
+            icon-class="fas fa-clipboard-check"
+            icon-bg="#1e40af"
+            :badge="store.pagination.totalItems ? `${store.pagination.totalItems}` : '0'"
+        >
+            <template #action>
+                <button v-if="can('vehicleInspections.create')" type="button" class="btn btn-primary btn-sm py-1 px-2 fs-11 rounded-3" @click="goToCreate">
+                    <i class="fas fa-plus me-1" aria-hidden="true"></i> Nueva
+                </button>
+            </template>
+        </MobileSectionHeader>
+
+        <div v-if="store.recentInspections && store.recentInspections.length > 0" class="d-flex flex-column w-100">
+            <MobileCard
+                v-for="item in store.recentInspections"
+                :key="item.uuid"
+                variant="blue"
+                :title="item.vehicle?.vehicle_license_plate || 'SIN PLACA'"
+                :subtitle="item.vehicle?.brand?.description ? `${item.vehicle.brand.description} ${item.vehicle.model || ''}` : 'Vehículo asignado'"
+                :badge="formatDate(item.inspection_date)"
+                icon-class="fas fa-clipboard-check"
+            >
+                <div class="d-flex justify-content-between align-items-center py-2 border-top border-bottom my-1">
+                    <div>
+                        <small class="text-muted d-block fs-10">Conductor</small>
+                        <span class="fw-semibold text-dark fs-12">
+                            {{ item.driver?.first_name ? `${item.driver.first_name} ${item.driver.last_name || ''}` : '-' }}
+                        </span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block fs-10">Kilometraje</small>
+                        <span class="badge bg-light text-primary border fw-bold fs-11">
+                            <i class="fad fa-tachometer-alt me-1" aria-hidden="true"></i>{{ formatNumber(item.mileage) }} km
+                        </span>
+                    </div>
+                </div>
+
+                <template #actions>
+                    <button class="mc-btn-primary" type="button" @click="downloadPdf(item.uuid)" :disabled="downloadingPdf === item.uuid">
+                        <span v-if="downloadingPdf === item.uuid" class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span>
+                        <i v-else class="fad fa-file-pdf" aria-hidden="true"></i>
+                        <span>PDF</span>
+                    </button>
+                    <button class="mc-btn-secondary" type="button" @click="openHistory(item)">
+                        <i class="fad fa-history text-info" aria-hidden="true"></i>
+                        <span>Historial</span>
+                    </button>
+                    <button v-if="can('vehicleInspections.update') && isSameDay(item.inspection_date)" class="mc-btn-secondary" type="button" @click="goToEdit(item.uuid)">
+                        <i class="fad fa-edit text-warning" aria-hidden="true"></i>
+                        <span>Editar</span>
+                    </button>
+                </template>
+            </MobileCard>
+        </div>
+
+        <MobileEmptyState
+            v-else
+            emoji="📋"
+            title="Sin inspecciones registradas"
+            description="No hay inspecciones con los filtros aplicados o no tienes asignadas para hoy."
+            action-text="Nueva Inspección"
+            action-icon="fas fa-plus"
+            @action="goToCreate"
+        />
+
+        <!-- Paginación Móvil Táctil -->
+        <div v-if="store.pagination.totalPages > 1" class="d-flex justify-content-between align-items-center mt-2 pt-1 px-1">
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage <= 1"
+                @click="onPageChange({ page: store.pagination.currentPage - 2, rows: store.pagination.itemsPerPage })">
+                <i class="fas fa-chevron-left me-1" aria-hidden="true"></i> Anterior
+            </button>
+            <span class="fs-11 text-muted fw-semibold">
+                {{ store.pagination.currentPage }} / {{ store.pagination.totalPages }}
+            </span>
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage >= store.pagination.totalPages"
+                @click="onPageChange({ page: store.pagination.currentPage, rows: store.pagination.itemsPerPage })">
+                Siguiente <i class="fas fa-chevron-right ms-1" aria-hidden="true"></i>
+            </button>
         </div>
     </div>
 
@@ -482,6 +570,9 @@ import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
 import SignaturePad from '@/components/SignaturePad.vue';
 import Swal from 'sweetalert2';
+import MobileCard from '@/components/mobile/MobileCard.vue';
+import MobileSectionHeader from '@/components/mobile/MobileSectionHeader.vue';
+import MobileEmptyState from '@/components/mobile/MobileEmptyState.vue';
 
 const router = useRouter();
 const store = useVehicleInspectionsStore();

@@ -18,22 +18,37 @@
         </router-link>
 
         <ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
-            <!-- Resumen temporal de alertas, junto a la campana -->
+            <!-- Clump: alertas de la empresa (vehículos propios) -->
             <Transition name="dock-fade">
-                <li v-if="store.dockedExpiryToasts.length" class="nav-item notification-dock-item">
+                <li v-if="store.unreadCompanyCount > 0" class="nav-item notification-dock-item">
                     <button
                         type="button"
-                        class="notification-dock-toggle"
-                        :class="{ 'is-activating': isDockActivating }"
-                        :disabled="isDockActivating"
-                        aria-label="Abrir las alertas nuevas en la campana"
-                        @click="openNotificationsMenu"
+                        class="notification-dock-toggle notification-dock-toggle--company"
+                        aria-label="Abrir las alertas de la empresa en la campana"
+                        @click="openNotificationsMenu('priority')"
                     >
-                        <span class="fas fa-layer-group" aria-hidden="true"></span>
-                        <span class="notification-dock-count">{{ store.dockedExpiryToasts.length }}</span>
-                        <span class="notification-dock-label">
-                            {{ store.dockedExpiryToasts.length === 1 ? 'alerta nueva' : 'alertas nuevas' }}
-                        </span>
+                        <span class="fas fa-building-shield" aria-hidden="true"></span>
+                        <span class="notification-dock-count">{{ companyClumpCount }}</span>
+                        <span class="notification-dock-label notification-dock-label--full d-none d-sm-inline">Alertas de la empresa</span>
+                        <span class="notification-dock-label d-sm-none">Empresa</span>
+                        <span class="fas fa-arrow-up-right" aria-hidden="true"></span>
+                    </button>
+                </li>
+            </Transition>
+
+            <!-- Clump: alertas de terceros -->
+            <Transition name="dock-fade">
+                <li v-if="store.unreadThirdPartyCount > 0" class="nav-item notification-dock-item">
+                    <button
+                        type="button"
+                        class="notification-dock-toggle notification-dock-toggle--third-party"
+                        aria-label="Abrir las alertas de terceros en la campana"
+                        @click="openNotificationsMenu('normal')"
+                    >
+                        <span class="fas fa-users" aria-hidden="true"></span>
+                        <span class="notification-dock-count">{{ thirdPartyClumpCount }}</span>
+                        <span class="notification-dock-label notification-dock-label--full d-none d-sm-inline">Alertas de terceros</span>
+                        <span class="notification-dock-label d-sm-none">Terceros</span>
                         <span class="fas fa-arrow-up-right" aria-hidden="true"></span>
                     </button>
                 </li>
@@ -44,7 +59,7 @@
                 <button class="nav-link px-0 bg-transparent border-0"
                     :class="{ 'notification-indicator notification-indicator-primary': store.unreadCount > 0 }"
                     id="navbarDropdownNotification" type="button" aria-label="Notificaciones" data-bs-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false" @click="store.clearDockedExpiryToasts">
+                    aria-expanded="false">
                     <span class="fas fa-bell" :class="{ 'is-attention': isBellAttention }" style="font-size: 33px;" aria-hidden="true"></span>
                 </button>
                 <div class="dropdown-menu dropdown-caret dropdown-menu-end dropdown-menu-card dropdown-menu-notification dropdown-caret-bg"
@@ -66,44 +81,50 @@
                         </div>
                         <div class="notification-list-container">
                             <div class="list-group list-group-flush fw-normal fs-10">
-                                <template v-if="store.latestNotifications.length > 0">
-                                    <div v-for="notification in store.latestNotifications.slice(0, 8)"
-                                        :key="notification.uuid" class="list-group-item p-0">
-                                        <router-link
-                                            class="notification-item-link d-flex align-items-start p-3 border-bottom text-decoration-none"
-                                            :class="{
-                                                'unread-item': notification.status !== 'LEIDA',
-                                                'notification-item--highlight': store.highlightedNotificationUuids.includes(notification.uuid)
-                                            }"
-                                            to="/notificaciones">
-                                            <div class="avatar avatar-xl me-3 flex-shrink-0">
-                                                <div class="avatar-name rounded-circle d-flex align-items-center justify-content-center fw-bold text-uppercase fs-11"
-                                                    :class="getAvatarClass(notification.type)">
-                                                    <span>{{ getInitialsLabel(notification.type) }}</span>
+                                <template v-if="dropdownGroups.length > 0">
+                                    <template v-for="group in dropdownGroups" :key="group.key">
+                                        <div v-if="group.title" class="dropdown-section-header"
+                                            :class="{ 'dropdown-section-header--priority': group.key === 'priority', 'dropdown-section-header--highlight': store.seccionResaltada === group.key }">
+                                            <span v-if="group.key === 'priority'" class="fas fa-triangle-exclamation me-1" aria-hidden="true"></span>{{ group.title }}
+                                        </div>
+                                        <div v-for="notification in group.items"
+                                            :key="notification.uuid" class="list-group-item p-0">
+                                                <router-link
+                                                class="notification-item-link d-flex align-items-start p-3 border-bottom text-decoration-none"
+                                                :class="{
+                                                    'unread-item': notification.status !== 'LEIDA',
+                                                    'priority-item': group.key === 'priority'
+                                                }"
+                                                :to="destinoNotificacion(notification)">
+                                                <div class="avatar avatar-xl me-3 flex-shrink-0">
+                                                    <div class="avatar-name rounded-circle d-flex align-items-center justify-content-center fw-bold text-uppercase fs-11"
+                                                        :class="getAvatarClass(notification.type)">
+                                                        <span>{{ getInitialsLabel(notification.type) }}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="flex-grow-1 min-w-0">
-                                                <div class="d-flex justify-content-between align-items-baseline mb-1">
-                                                    <p class="mb-0 text-900 fs-11 fw-bold text-truncate pe-2"
-                                                        style="max-width: 140px;">
-                                                        {{ notification.title }}
+                                                <div class="flex-grow-1 min-w-0">
+                                                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                                        <p class="mb-0 text-900 fs-11 fw-bold text-truncate pe-2"
+                                                            style="max-width: 140px;">
+                                                            {{ notification.title }}
+                                                        </p>
+                                                        <span
+                                                            class="fs-10 text-700 fw-normal flex-shrink-0 font-sans-serif">
+                                                            {{ timeAgo(notification.created_at) }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="mb-0 text-700 fs-10 line-clamp-2" style="line-height: 1.4;">
+                                                        {{ notification.message }}
                                                     </p>
-                                                    <span
-                                                        class="fs-10 text-700 fw-normal flex-shrink-0 font-sans-serif">
-                                                        {{ timeAgo(notification.created_at) }}
-                                                    </span>
+                                                    <small v-if="notification.expiry_date"
+                                                        class="text-danger fs-10 fw-medium mt-1 d-block">
+                                                        <i class="fas fa-calendar-alt me-1" aria-hidden="true"></i>Vence: {{
+                                                            formatDate(notification.expiry_date) }}
+                                                    </small>
                                                 </div>
-                                                <p class="mb-0 text-700 fs-10 line-clamp-2" style="line-height: 1.4;">
-                                                    {{ notification.message }}
-                                                </p>
-                                                <small v-if="notification.expiry_date"
-                                                    class="text-danger fs-10 fw-medium mt-1 d-block">
-                                                    <i class="fas fa-calendar-alt me-1"></i>Vence: {{
-                                                        formatDate(notification.expiry_date) }}
-                                                </small>
-                                            </div>
-                                        </router-link>
-                                    </div>
+                                            </router-link>
+                                        </div>
+                                    </template>
                                 </template>
                                 <template v-else>
                                     <div class="p-4 text-center text-700">
@@ -168,11 +189,10 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useUserStore, useAuthStore, usePermissionsStore } from '@store'
-import { getMediaUrl } from '@/utils/media.js'
 import { useNotificationsStore } from '@/features/notifications/store/notifications.store.js'
 import { useConfigStore } from '@store/modules/config.js'
 
-const props = defineProps({
+defineProps({
     hideSidebarToggle: {
         type: Boolean,
         default: false
@@ -190,13 +210,14 @@ const configStore = useConfigStore()
 const store = useNotificationsStore()
 const isLoggingOut = ref(false)
 
-// Animación de transición entre el clump y la campana.
-const isDockActivating = ref(false)
+// Animación de la campana al abrir desde un clump.
 const isBellAttention = ref(false)
-const DOCK_ACTIVATION_MS = 180
 const BELL_ATTENTION_MS = 600
-let dockActivationTimeout = null
 let bellAttentionTimeout = null
+
+// Conteo de los clumps, topado para no romper el pill.
+const companyClumpCount = computed(() => (store.unreadCompanyCount > 9 ? '9+' : store.unreadCompanyCount))
+const thirdPartyClumpCount = computed(() => (store.unreadThirdPartyCount > 9 ? '9+' : store.unreadThirdPartyCount))
 
 const showNotificationsDropdown = () => {
     const trigger = document.getElementById('navbarDropdownNotification')
@@ -211,25 +232,16 @@ const showNotificationsDropdown = () => {
     trigger.click()
 }
 
-const openNotificationsMenu = () => {
-    if (isDockActivating.value) return
-    isDockActivating.value = true
+const openNotificationsMenu = (origen = null) => {
+    if (origen) store.resaltarSeccion(origen)
+    showNotificationsDropdown()
 
-    // Deja que el clump se encoja antes de replegarse, y luego abre la campana
-    // resaltando únicamente las alertas que lo originaron.
-    dockActivationTimeout = setTimeout(() => {
-        dockActivationTimeout = null
-        isDockActivating.value = false
-
-        store.highlightDockedExpiryToasts()
-        showNotificationsDropdown()
-
-        isBellAttention.value = true
-        bellAttentionTimeout = setTimeout(() => {
-            isBellAttention.value = false
-            bellAttentionTimeout = null
-        }, BELL_ATTENTION_MS)
-    }, DOCK_ACTIVATION_MS)
+    isBellAttention.value = true
+    if (bellAttentionTimeout) clearTimeout(bellAttentionTimeout)
+    bellAttentionTimeout = setTimeout(() => {
+        isBellAttention.value = false
+        bellAttentionTimeout = null
+    }, BELL_ATTENTION_MS)
 }
 
 onMounted(() => {
@@ -237,11 +249,48 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    if (dockActivationTimeout) clearTimeout(dockActivationTimeout)
     if (bellAttentionTimeout) clearTimeout(bellAttentionTimeout)
     store.disconnectSSE()
 })
 
+// Destino de la fila: la ficha indicada por la alerta, solo si el usuario
+// tiene el permiso; si no, el listado (igual que el módulo, que oculta el
+// enlace en ese caso pero aquí la fila siempre debe llevar a algo útil).
+const destinoNotificacion = (notification) => {
+    let extra = notification?.extra_data ?? null
+    if (typeof extra === 'string' && extra !== '') {
+        try {
+            extra = JSON.parse(extra)
+        } catch {
+            extra = null
+        }
+    }
+    const action = extra?.action ?? null
+    if (action?.path && (!action.permission || permissionsStore.can(action.permission))) {
+        return action.path
+    }
+    return '/notificaciones'
+}
+
+// Dropdown en dos secciones: las prioritarias (empresa propia) van primero
+// y nunca se mezclan con las normales. Máximo 8 elementos en total.
+const dropdownGroups = computed(() => {
+    const priority = store.priorityAlerts.slice(0, 4)
+    const normal = store.normalAlerts.slice(0, Math.max(0, 8 - priority.length))
+    const groups = []
+    if (priority.length > 0) {
+        groups.push({ key: 'priority', title: 'Alertas prioritarias', items: priority })
+    }
+    if (normal.length > 0) {
+        // Título siempre presente para que el resaltado por clump tenga
+        // ancla visible aunque no haya prioritarias.
+        groups.push({ key: 'normal', title: 'Notificaciones', items: normal })
+    }
+    return groups
+})
+
+// Destino de la fila de la campana: respeta el permiso igual que el módulo;
+// sin permiso cae al listado en vez de a una ruta bloqueada.
 const getAvatarClass = (type) => {
     switch (type) {
         case 'VEHICLE_DOCUMENT': return 'bg-subtle-info text-info'
@@ -325,9 +374,6 @@ const userName = computed(() => {
     const rawName = userStore.fullName || permissionsStore.user?.name || 'Usuario'
     return getInitials(rawName)
 })
-
-const userAvatar = computed(() => getMediaUrl(userStore.avatar, null))
-const companyLogo = computed(() => getMediaUrl(userStore.logo))
 
 const displayRoles = computed(() => {
     if (!permissionsStore.roles || permissionsStore.roles.length === 0) {
@@ -454,23 +500,6 @@ async function handleLogout() {
     color: #fff;
 }
 
-/* Transición del clump: se encoge y se repliega hacia la campana */
-.notification-dock-toggle.is-activating {
-    animation: dock-confirm 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes dock-confirm {
-    0% {
-        transform: scale(1);
-    }
-    45% {
-        transform: scale(0.94);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
 .dock-fade-leave-active {
     transition: opacity 0.22s ease, transform 0.22s ease;
 }
@@ -505,33 +534,6 @@ async function handleLogout() {
     }
     60% {
         transform: rotate(6deg) scale(1.04);
-    }
-}
-
-/* Resaltado breve de las alertas realmente nuevas */
-.notification-item--highlight {
-    animation: notification-highlight 1s ease-out;
-}
-
-@keyframes notification-highlight {
-    0% {
-        background-color: rgba(var(--bs-primary-rgb), 0.28);
-    }
-    100% {
-        background-color: transparent;
-    }
-}
-
-.dark .notification-item--highlight {
-    animation-name: notification-highlight-dark;
-}
-
-@keyframes notification-highlight-dark {
-    0% {
-        background-color: rgba(44, 123, 229, 0.4);
-    }
-    100% {
-        background-color: transparent;
     }
 }
 
@@ -582,7 +584,7 @@ async function handleLogout() {
         margin-right: 0.4rem;
     }
 
-    .notification-dock-label {
+    .notification-dock-label--full {
         display: none;
     }
 
@@ -597,16 +599,8 @@ async function handleLogout() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .notification-dock-toggle.is-activating,
-    .fas.fa-bell.is-attention,
-    .notification-item--highlight,
-    .dark .notification-item--highlight {
+    .fas.fa-bell.is-attention {
         animation: none;
-    }
-
-    .notification-item--highlight,
-    .dark .notification-item--highlight {
-        background-color: rgba(var(--bs-primary-rgb), 0.18);
     }
 
     .dock-fade-leave-active,
@@ -618,5 +612,79 @@ async function handleLogout() {
     .dock-fade-enter-from {
         transform: none;
     }
+}
+
+/* Clump de la empresa: diferencia visual clara en rojo */
+.notification-dock-toggle--company {
+    border-color: rgba(var(--bs-danger-rgb, 230, 55, 87), 0.5);
+    background: rgba(var(--bs-danger-rgb, 230, 55, 87), 0.08);
+    color: var(--bs-danger, #e63757);
+}
+
+.notification-dock-toggle--company:hover {
+    background: rgba(var(--bs-danger-rgb, 230, 55, 87), 0.14);
+    border-color: rgba(var(--bs-danger-rgb, 230, 55, 87), 0.7);
+}
+
+.notification-dock-toggle--company:focus-visible {
+    outline-color: var(--bs-danger, #e63757);
+}
+
+.notification-dock-toggle--company .notification-dock-count {
+    background: var(--bs-danger, #e63757);
+    color: #fff;
+}
+
+.dark .notification-dock-toggle--company {
+    background: rgba(var(--bs-danger-rgb, 230, 55, 87), 0.18);
+    color: #f5a3b3;
+}
+
+/* Clump de terceros: neutro */
+.notification-dock-toggle--third-party {
+    border-color: #bcd6f7;
+    background: #e8f1fd;
+    color: #1257b8;
+}
+
+.notification-dock-toggle--third-party:hover {
+    background: #d8e8fc;
+    border-color: #93bdf3;
+}
+
+.dark .notification-dock-toggle--third-party {
+    border-color: rgba(44, 123, 229, 0.45);
+    background: rgba(44, 123, 229, 0.18);
+    color: #9ec5fe;
+}
+
+.dropdown-section-header {
+    padding: 8px 16px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-gray-600);
+}
+
+.dropdown-section-header--priority {
+    color: var(--bs-danger, #e63757);
+}
+
+.dropdown-section-header--highlight {
+    background-color: rgba(var(--bs-primary-rgb, 44, 123, 229), 0.12);
+    border-radius: 4px;
+}
+
+.priority-item {
+    border-left: 3px solid var(--bs-danger, #e63757) !important;
+}
+
+.priority-item.unread-item {
+    background-color: rgba(var(--bs-danger-rgb, 230, 55, 87), 0.07);
+}
+
+.priority-item.unread-item:hover {
+    background-color: rgba(var(--bs-danger-rgb, 230, 55, 87), 0.12);
 }
 </style>

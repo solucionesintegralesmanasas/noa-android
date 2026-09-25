@@ -314,20 +314,6 @@ const redirectToGoogle = async () => {
     }
 }
 
-const getInitials = (fullName) => {
-    if (!fullName) return 'US'
-    const parts = fullName.trim().split(/\s+/)
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[1][0]).toUpperCase()
-    }
-    return parts[0].substring(0, 2).toUpperCase()
-}
-
-const userInitials = computed(() => {
-    const rawName = userStore.fullName || permissionsStore.user?.name || 'Usuario'
-    return getInitials(rawName)
-})
-
 const displayRoles = computed(() => {
     if (!permissionsStore.roles || permissionsStore.roles.length === 0) {
         return authStore.currentTenant?.role?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Usuario'

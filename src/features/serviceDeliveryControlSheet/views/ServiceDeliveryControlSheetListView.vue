@@ -1,8 +1,10 @@
-﻿<template>
-    <BasePageHeader title="Hojas de Control de Servicio"
-        description="Gestión de las planillas de control de prestación de servicios."
-        icon="fad fa-clipboard-list text-primary" :show-bg="true" :loading="isViewLoading || store.loading"
-        :compact="true" :breadcrumbs="[{ label: 'Hojas de Control' }, { label: 'Listado' }]">
+<template>
+    <!-- VISTA ESCRITORIO / TABLET -->
+    <div class="d-none d-md-block">
+        <BasePageHeader title="Hojas de Control de Servicio"
+            description="Gestión de las planillas de control de prestación de servicios."
+            icon="fad fa-clipboard-list text-primary" :show-bg="true" :loading="isViewLoading || store.loading"
+            :compact="true" :breadcrumbs="[{ label: 'Hojas de Control' }, { label: 'Listado' }]">
         <template #actions>
             <!-- REFRESH -->
             <button class="btn btn-falcon-default btn-sm px-3 me-2" type="button" title="Actualizar"
@@ -11,7 +13,7 @@
             </button>
 
             <!-- REPORTES: un solo diálogo con rango, vehículo, conductor, día y mensual en PDF y Excel -->
-            <button class="btn btn-info btn-sm px-3 fw-medium shadow-sm me-2" type="button" title="Reportes solo días cerrados"
+            <button v-if="permissions.pdf" class="btn btn-info btn-sm px-3 fw-medium shadow-sm me-2" type="button" title="Reportes solo días cerrados"
                 @click="showReportsDialog = true">
                 <i class="fad fa-file-chart-column me-1" aria-hidden="true"></i> <span class="d-none d-sm-inline">Reportes</span>
             </button>
@@ -117,9 +119,10 @@
                     </div>
                 </div>
 
-                <!-- DATATABLE (PaginaciÃƒÂ³n Server-Side) -->
+                <!-- DATATABLE (Paginación Server-Side) -->
                 <div v-else class="card-body p-0">
-                    <div class="table-responsive scrollbar">
+                    <!-- Vista Escritorio -->
+                    <div class="table-responsive scrollbar d-none d-md-block">
                         <DataTable :value="store.items" v-model:expandedRows="expandedRows" dataKey="uuid" lazy :paginator="true" :rows="store.pagination.itemsPerPage"
                             :totalRecords="store.pagination.totalItems" :first="(store.pagination.currentPage - 1) *
                                 store.pagination.itemsPerPage
@@ -189,11 +192,7 @@
                             <Column header="Acciones" class="text-center" style="width: 110px;">
                                 <template #body="{ data }">
                                     <div class="d-flex align-items-center justify-content-center gap-1">
-                                        <!-- Primary Actions -->
-                                        <button v-if="permissions.view" class="btn btn-falcon-default btn-sm px-2" type="button"
-                                            title="Ver detalle" @click="goToDetail(data.uuid)">
-                                            <i class="fad fa-eye text-primary"></i>
-                                        </button>
+                                        <!-- La vista de detalle no existe (sin ruta): se eliminó el botón muerto. -->
                                         <button v-if="!isServicioCerrado(data)" class="btn btn-falcon-default btn-sm px-2" type="button"
                                             title="Continuar servicio" @click="goToControl(data.uuid)">
                                             <i class="fad fa-steering-wheel text-success"></i>
@@ -201,7 +200,7 @@
 
                                         <!-- Más acciones (Menu) -->
                                         <!-- Secondary actions -->
-<button class="btn btn-falcon-default btn-sm px-2" type="button" title="Descargar PDF Diario" @click="downloadParentPdf(data)">
+<button v-if="permissions.pdf" class="btn btn-falcon-default btn-sm px-2" type="button" title="Descargar PDF Diario" @click="downloadParentPdf(data)">
 <i class="fad fa-file-pdf text-danger"></i>
 </button>
 <button v-if="canShareCoordinatorLink && !isServicioCerrado(data) && !data.has_coordinator_signature" class="btn btn-falcon-default btn-sm px-2" type="button" title="Firma Coordinador" @click="shareCoordinatorLink(data.uuid)">
@@ -246,7 +245,7 @@
                                                     </td>
                                                     <td>{{ Array.isArray(dia.routes) ? dia.routes.length : 0 }}</td>
                                                     <td class="text-center">
-                                                        <button class="btn btn-falcon-default btn-sm p-0 px-1"
+                                                        <button v-if="permissions.pdf" class="btn btn-falcon-default btn-sm p-0 px-1"
                                                             type="button" title="Descargar PDF de este día"
                                                             :aria-label="`Descargar PDF del día ${formatRango(dia.service_date)}`"
                                                             :disabled="downloadingDaily === dia.uuid"
@@ -271,6 +270,90 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <!-- VISTA MÓVIL ANDROID CAPACITOR (Pantalla completa de borde a borde) -->
+    <div class="d-md-none w-100 px-1 pt-1 pb-3 mobile-service-feed">
+        <MobileSectionHeader
+            title="Control de Servicio"
+            icon-class="fas fa-route"
+            icon-bg="#14b8a6"
+            :badge="store.pagination.totalItems ? `${store.pagination.totalItems}` : '0'"
+        >
+            <template #action>
+                <button v-if="permissions.create" type="button" class="btn btn-primary btn-sm py-1 px-2 fs-11 rounded-3" @click="goToCreate">
+                    <i class="fas fa-plus me-1" aria-hidden="true"></i> Nuevo
+                </button>
+            </template>
+        </MobileSectionHeader>
+
+        <div v-if="store.items && store.items.length > 0" class="d-flex flex-column w-100">
+            <MobileCard
+                v-for="item in store.items"
+                :key="item.uuid"
+                variant="teal"
+                :title="item.vehicle_license_plate || 'SIN PLACA'"
+                :subtitle="item.project?.project_name || 'Servicio de Transporte'"
+                :badge="tipoLabel(item.type_of_control_sheet)"
+                icon-class="fas fa-route"
+            >
+                <div class="d-flex justify-content-between align-items-center py-2 border-top border-bottom my-1">
+                    <div>
+                        <small class="text-muted d-block fs-10">Conductor</small>
+                        <span class="fw-semibold text-dark fs-12">
+                            {{ item.driver_name || item.official_name_and_surname || 'Sin conductor' }}
+                        </span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block fs-10">Recorridos</small>
+                        <span class="badge bg-light text-primary border fw-bold fs-11">
+                            <i class="fad fa-road me-1" aria-hidden="true"></i>{{ recorridosCount(item) }}
+                        </span>
+                    </div>
+                </div>
+
+                <template #actions>
+                    <button class="mc-btn-primary" type="button" @click="goToInternalControl">
+                        <i class="fad fa-steering-wheel" aria-hidden="true"></i>
+                        <span>Control en Ruta</span>
+                    </button>
+                    <button class="mc-btn-secondary" type="button" @click="downloadParentPdf(item)">
+                        <i class="fad fa-file-pdf text-danger" aria-hidden="true"></i>
+                        <span>PDF</span>
+                    </button>
+                    <button v-if="permissions.edit && !isServicioCerrado(item)" class="mc-btn-secondary" type="button" @click="goToEdit(item.uuid)">
+                        <i class="fad fa-edit text-warning" aria-hidden="true"></i>
+                        <span>Editar</span>
+                    </button>
+                </template>
+            </MobileCard>
+        </div>
+
+        <MobileEmptyState
+            v-else
+            emoji="🚌"
+            title="Sin hojas de servicio"
+            description="No hay registros de control de servicio para los filtros seleccionados."
+            action-text="Control en Ruta"
+            action-icon="fad fa-steering-wheel"
+            @action="goToInternalControl"
+        />
+
+        <!-- Paginación Móvil Táctil -->
+        <div v-if="store.pagination.totalPages > 1" class="d-flex justify-content-between align-items-center mt-2 pt-1 px-1">
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage <= 1"
+                @click="onPageChange({ page: store.pagination.currentPage - 2, rows: store.pagination.itemsPerPage })">
+                <i class="fas fa-chevron-left me-1" aria-hidden="true"></i> Anterior
+            </button>
+            <span class="fs-11 text-muted fw-semibold">
+                {{ store.pagination.currentPage }} / {{ store.pagination.totalPages }}
+            </span>
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage >= store.pagination.totalPages"
+                @click="onPageChange({ page: store.pagination.currentPage, rows: store.pagination.itemsPerPage })">
+                Siguiente <i class="fas fa-chevron-right ms-1" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
     <!-- DIÁLOGO ÚNICO DE REPORTES: rango, vehículo, conductor, día y mensual en PDF y Excel (solo cerradas) -->
     <ServiceReportsDialog v-model:visible="showReportsDialog" :vehicles="reportVehicles" :drivers="reportDrivers" />
 </template>
@@ -283,7 +366,7 @@
  * @module {Features.Fleet}
  * @resource {ServiceDeliveryControlSheet}
  */
-import { ref, onMounted, onUnmounted, reactive, computed } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useServiceDeliveryControlSheetStore } from '../store/serviceDeliveryControlSheet.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
@@ -297,6 +380,9 @@ import ServiceReportsDialog from '../components/ServiceReportsDialog.vue';
 import { formatRango as formatRangoHook, diasHijos as diasHijosHook, recorridosCount as recorridosCountHook, recorridosTexto as recorridosTextoHook, esCerrado } from '../hooks/useServiceList.js';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import MobileCard from '@/components/mobile/MobileCard.vue';
+import MobileSectionHeader from '@/components/mobile/MobileSectionHeader.vue';
+import MobileEmptyState from '@/components/mobile/MobileEmptyState.vue';
 
 const router = useRouter();
 const store = useServiceDeliveryControlSheetStore();
@@ -306,7 +392,7 @@ const userStore = useUserStore();
 const isViewLoading = ref(true);
 const searchQuery = ref('');
 const projectFilter = ref('');
-const soloCerradas = ref(true);
+const soloCerradas = ref(false);
 const expandedRows = ref([]);
 
 const showReportsDialog = ref(false);
@@ -317,9 +403,9 @@ const sharingLink = ref(null);
 
 const canShareCoordinatorLink = computed(() => (permissionsStore.roles || []).some(r => r === 'SUPERADMIN' || r === 'ADMIN_EMPRESA' || r?.name === 'SUPERADMIN' || r?.name === 'ADMIN_EMPRESA'));
 
-const permissions = reactive({ view: false, edit: false, delete: false });
+const permissions = reactive({ edit: false, delete: false, pdf: false });
 const { debouncedSearch } = useTable({}, () => store.setGlobalFilter(searchQuery.value));
-const { confirmDelete, initTooltips, destroyTooltips } = useTableActions(store, router);
+const { confirmDelete, initTooltips } = useTableActions(store, router);
 
 const clearSearch = async () => { searchQuery.value = ''; await store.clearFilters(); };
 const refreshTable = () => store.fetchItems();
@@ -338,7 +424,6 @@ const tipoLabel = (type) => { const tipos = { 'DIRECTO_CON_LA_EMPRESA': 'Directo
 
 const goToInternalControl = () => router.push('/planilla-de-control-de-prestacion-servicios/control-de-servicios');
 const goToCreate = () => router.push('/planilla-de-control-de-prestacion-servicios/crear');
-const goToDetail = (uuid) => router.push(`/planilla-de-control-de-prestacion-servicios/detalle/${uuid}`);
 const goToControl = (uuid) => router.push(`/planilla-de-control-de-prestacion-servicios/control-de-servicios?id=${uuid}`);
 const goToEdit = (uuid) => router.push(`/planilla-de-control-de-prestacion-servicios/editar/${uuid}`);
 
@@ -400,6 +485,10 @@ onMounted(async () => {
     try {
         await store.loadFormOptions(userStore.company_uuid);
         if (store.catalogs.projects) store.projects = store.catalogs.projects;
+        permissions.pdf = permissionsStore.can('service_delivery_control_sheets.history_pdf');
+        // El listado arranca mostrando todo (abiertas y cerradas); el
+        // interruptor "Solo cerradas" filtra bajo demanda.
+        soloCerradas.value = store.soloCerradas;
         permissions.view = permissionsStore.can('service_delivery_control_sheets.view');
         permissions.edit = permissionsStore.can('service_delivery_control_sheets.update');
         permissions.delete = permissionsStore.can('service_delivery_control_sheets.delete');

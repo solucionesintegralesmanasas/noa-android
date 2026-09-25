@@ -124,20 +124,18 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTaxDeclarationsStore } from '../store/taxDeclarations.store.js';
-import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import Swal from 'sweetalert2';
 
 
 /** Computed para BasePageHeader (evita expresiones complejas en el template) */
 const pageTitle = computed(() => 'Perfil de Declaración de Renta');
-const pageSubtitle = computed(() => isViewLoading ? '' : 'Detalle completo de la declaración de renta');
+const pageSubtitle = computed(() => isViewLoading.value ? '' : 'Detalle completo de la declaración de renta');
 const breadcrumbs = computed(() => [ { label: 'Declaraciones de Renta', to: '/declaraciones-de-renta', }, { label: 'Perfil' }, ]);
 
 const route = useRoute();
 const router = useRouter();
 const store = useTaxDeclarationsStore();
-const permissionsStore = usePermissionsStore();
 
 const item = computed(() => store.selectedItem || {});
 const isViewLoading = ref(true);
@@ -147,17 +145,7 @@ const isViewLoading = ref(true);
  * @param {string} action - Acción a verificar.
  * @returns {boolean} Verdadero si el usuario tiene el permiso.
  */
-const can = (action) => permissionsStore.can(action);
-
-/**
- * Navega hacia atrás.
- */
 const goBack = () => router.push('/empresas/declaraciones-de-renta');
-
-/**
- * Navega a la vista de edición.
- */
-const goToEdit = () => router.push(`/empresas/declaraciones-de-renta/editar/${route.params.id}`);
 
 onMounted(async () => {
     isViewLoading.value = true;

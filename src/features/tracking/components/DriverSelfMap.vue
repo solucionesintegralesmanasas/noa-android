@@ -29,7 +29,6 @@ let polylineInstance = null;
 let durationTimer = null;
 
 const isTracking = computed(() => driverTracking.isTracking);
-const session = computed(() => driverTracking.session);
 
 const hasVehicles = computed(() => props.vehicles && props.vehicles.length > 0);
 

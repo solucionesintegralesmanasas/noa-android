@@ -192,6 +192,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useTaxDeclarationsStore } from '../store/taxDeclarations.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 
 const route = useRoute();

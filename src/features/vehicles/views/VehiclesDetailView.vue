@@ -587,7 +587,6 @@ import VehiclesService from '../services/vehicles.service.js';
 import { useToast } from 'vue-toastification';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import VehicleDocumentsMenu from '../components/VehicleDocumentsMenu.vue';
-import apiClient from '@/services/api/client.js';
 
 // ===== DEPENDENCIAS =====
 const route = useRoute();
@@ -720,8 +719,6 @@ const getDocumentStatusLabel = (doc) => {
     return 'Vigente';
 };
 
-const handleImageError = (e) => { e.target.style.display = 'none'; };
-
 // ===== NAVEGACIÓN Y ACCIONES =====
 const goBack = () => {
     router.push('/vehiculos');
@@ -739,16 +736,6 @@ const checkingDocs = ref(false);
 const goCompleteDocuments = () => {
     if (!vehicle.value.uuid && !route.params.id) return;
     showDocsMenu.value = true;
-};
-
-const viewOwner = () => {
-    if (vehicle.value.third_party_uuid) {
-        router.push(`/terceros/${vehicle.value.third_party_uuid}`);
-    }
-};
-
-const viewDocument = (doc) => {
-    // Implementar modal o navegación a detalle del documento
 };
 
 const handleDownloadTechnicalSheet = async () => {

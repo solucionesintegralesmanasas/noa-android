@@ -5,6 +5,7 @@ import BasePageHeader from '@/components/BasePageHeader.vue';
 import DriverMap from '../components/DriverMap.vue';
 import DriverMarker from '../components/DriverMarker.vue';
 import { useTrackingStore } from '../store/tracking.store';
+import { useRealtimeChannel } from '@/hooks/useRealtimeChannel.js';
 import { usePermissionsStore } from '@/store/modules/permissions';
 import { useToast } from 'vue-toastification';
 
@@ -42,13 +43,10 @@ const stats = computed(() => ({
     alerts: store.alerts.filter((a) => !a.is_read).length,
 }));
 
-let refreshInterval = null;
+let channel = null;
 
 function refreshDrivers() {
-    loadingDrivers.value = true;
-    store.fetchActiveDrivers().finally(() => {
-        loadingDrivers.value = false;
-    });
+    channel?.refreshNow();
 }
 
 function openHistory(driver) {
@@ -75,17 +73,24 @@ onMounted(async () => {
     canViewHistory.value = permissions.can('locations.history');
     canViewGeofences.value = permissions.can('locations.geofences');
 
-    refreshDrivers();
+    // Canal único de refresco (ARQ-009/ARQ-010): ciclo encadenado sin
+    // solapamiento, pausa con pestaña oculta y cancelación al desmontar.
+    channel = useRealtimeChannel(async (signal) => {
+        loadingDrivers.value = true;
+        try {
+            await store.fetchActiveDrivers(signal);
+        } finally {
+            loadingDrivers.value = false;
+        }
+    }, { intervalMs: 10000 });
+    channel.start();
+
     store.fetchAlerts({ only_unread: true, per_page: 20 });
     store.fetchGeofences();
-
-    refreshInterval = setInterval(refreshDrivers, 10000);
 });
 
 onBeforeUnmount(() => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
+    channel?.stop();
 });
 </script>
 

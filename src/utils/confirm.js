@@ -38,3 +38,30 @@ export async function confirmUnsavedChanges() {
         return 'discard';
     }
 }
+
+/**
+ * Pregunta confirmación antes de cerrar la sesión activa.
+ * @returns {Promise<boolean>} true si el usuario confirma el cierre de sesión
+ */
+export async function confirmLogout() {
+    try {
+        const Swal = await getSwal();
+        const result = await Swal.fire({
+            title: '¿Cerrar sesión?',
+            text: '¿Estás seguro de que deseas salir de tu cuenta?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, salir',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#e63757',
+            cancelButtonColor: '#748194',
+            reverseButtons: true,
+        });
+
+        return Boolean(result.isConfirmed);
+    } catch {
+        // En caso de fallo o fallback, usar confirm nativo del navegador
+        return window.confirm('¿Estás seguro de que deseas cerrar sesión?');
+    }
+}
+

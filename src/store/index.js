@@ -9,7 +9,6 @@ import { createLoggerPlugin } from '@store/plugins/logger.js';
 import {
     authPersistencePlugin,
     permissionsPersistencePlugin,
-    uiPersistencePlugin,
     userProfilePersistencePlugin
 } from '@store/plugins/persistence.js';
 import { useAuthStore } from '@store/modules/auth.js';
@@ -62,6 +61,7 @@ export const installPinia = (app) => {
 export { useAuthStore } from '@store/modules/auth.js';
 export { useUserStore } from '@store/modules/user.js';
 export { usePermissionsStore } from '@store/modules/permissions.js';
+export { useConfigStore } from '@store/modules/config.js';
 
 // Exportación de utilidades para configuración avanzada
 export * from '@store/plugins/encryption.js';

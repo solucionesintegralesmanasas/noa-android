@@ -51,6 +51,10 @@
                             <option value="VEHICLE_MAINTENANCE_ALERT">Mantenimiento Preventivo</option>
                             <option value="SOCIAL_SECURITY_MORA">Seguridad Social</option>
                         </select>
+                        <label class="visually-hidden" for="f-priority">Filtrar por prioridad</label>
+                        <PrimeSelect input-id="f-priority" v-model="filterPriority" :options="priorityOptions"
+                            option-label="label" option-value="value" size="small" class="w-100"
+                            @change="applyFilters" />
                     </div>
                 </div>
             </div>
@@ -100,6 +104,18 @@
                         emptyMessage="No se encontraron alertas registradas" 
                         @page="onPageChange"
                     >
+                        <!-- Columna Prioridad -->
+                        <Column field="priority" header="Prioridad" style="width: 140px;">
+                            <template #body="{ data }">
+                                <span v-if="data.priority === 'PRIORITARIA'" class="badge badge-subtle badge-subtle-danger">
+                                    <i class="fad fa-triangle-exclamation me-1" aria-hidden="true" /> Prioritaria
+                                </span>
+                                <span v-else class="badge badge-subtle badge-subtle-secondary">
+                                    <i class="fad fa-bell me-1" aria-hidden="true" /> Normal
+                                </span>
+                            </template>
+                        </Column>
+
                         <!-- Columna Tipo -->
                         <Column field="type" header="Tipo de Alerta" style="width: 200px;">
                             <template #body="{ data }">
@@ -115,7 +131,7 @@
                             <template #body="{ data }">
                                 <div class="d-flex flex-column">
                                     <span class="fw-semibold text-dark fs-10 mb-1">{{ data.title }}</span>
-                                    <span class="text-600 fs-11" v-html="formatMessage(data.message)"></span>
+                                    <span class="text-600 fs-11"><template v-for="(seg, i) in segmentarMensaje(data)" :key="i"><strong v-if="seg.tipo === 'fuerte'" :class="seg.peligro ? 'text-danger' : 'text-warning'">{{ seg.texto }}</strong><router-link v-else-if="seg.tipo === 'enlace'" :to="seg.path" class="alerta-enlace" :title="seg.titulo" :aria-label="seg.aria">{{ seg.texto }}</router-link><template v-else>{{ seg.texto }}</template></template></span>
                                 </div>
                             </template>
                         </Column>
@@ -169,20 +185,38 @@
                         </Column>
 
                         <!-- Columna Acciones -->
-                        <Column header="Acciones" class="text-center" style="width: 120px;">
+                        <Column header="Acciones" class="text-center" style="width: 170px;">
                             <template #body="{ data }">
-                                <button 
-                                    v-if="data.status !== 'LEIDA'" 
-                                    class="btn btn-falcon-default btn-sm shadow-sm" 
-                                    type="button" 
-                                    title="Marcar como leída" 
-                                    @click="handleMarkAsRead(data.uuid)"
-                                >
-                                    <i class="fad fa-check text-success me-1" /> Marcar Leída
-                                </button>
-                                <span v-else class="text-muted fs-11 fw-medium">
-                                    <i class="fad fa-check-double text-success me-1" /> Leída
-                                </span>
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                    <button
+                                        v-if="data.status !== 'LEIDA'"
+                                        class="btn btn-falcon-default btn-sm shadow-sm"
+                                        type="button"
+                                        title="Marcar como leída"
+                                        @click="handleMarkAsRead(data.uuid)"
+                                    >
+                                        <i class="fad fa-check text-success me-1" /> Marcar Leída
+                                    </button>
+                                    <span v-else class="text-muted fs-11 fw-medium">
+                                        <i class="fad fa-check-double text-success me-1" /> Leída
+                                    </span>
+                                    <div v-if="accionesVisibles(data).length > 0" class="dropdown position-static">
+                                        <button class="btn btn-link text-600 btn-sm dropdown-toggle btn-reveal"
+                                            type="button" data-bs-toggle="dropdown" data-boundary="window"
+                                            aria-haspopup="true" aria-expanded="false"
+                                            aria-label="Acciones de la alerta">
+                                            <span class="fas fa-ellipsis-h fs--1" aria-hidden="true"></span>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end border py-0">
+                                            <div class="py-2">
+                                                <router-link v-for="accion in accionesVisibles(data)"
+                                                    :key="accion.key" class="dropdown-item" :to="accion.path">
+                                                    {{ accion.label }}
+                                                </router-link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </template>
                         </Column>
                         <!-- Loading state -->
@@ -199,18 +233,28 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useNotificationsStore } from '../store/notifications.store.js';
+import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import NoaTableSpinner from '@/components/NoaTableSpinner.vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import PrimeSelect from 'primevue/select';
 import Swal from 'sweetalert2';
 
 const store = useNotificationsStore();
+const permissionsStore = usePermissionsStore();
 const isViewLoading = ref(true);
 
 const filterStatus = ref('');
 const filterType = ref('');
+const filterPriority = ref('');
 const currentPage = ref(1);
+
+const priorityOptions = [
+    { label: 'Todas las prioridades', value: '' },
+    { label: 'Prioritarias', value: 'PRIORITARIA' },
+    { label: 'Normales', value: 'NORMAL' },
+];
 
 const getTypeIcon = (type) => {
     switch (type) {
@@ -242,13 +286,60 @@ const getTypeLabel = (type) => {
     }
 };
 
-const formatMessage = (msg) => {
-    if (!msg) return '';
-    let formatted = msg;
-    // Resaltar palabras clave
-    formatted = formatted.replace(/(VENCIDO|VENCIDA|VENCIDAS)/g, '<strong class="text-danger">$1</strong>');
-    formatted = formatted.replace(/(por vencer|vence en|PRÓXIMO|PRÓXIMA|PROXIMO|PROXIMA)/gi, '<strong class="text-warning">$1</strong>');
-    return formatted;
+// Patrones de énfasis (los mismos que usaba el anterior v-html).
+const PATRON_ENFASIS = /(VENCIDO|VENCIDA|VENCIDAS|por vencer|vence en|PRÓXIMO|PRÓXIMA|PROXIMO|PROXIMA)/gi;
+const CLASE_PELIGRO = /^(VENCIDO|VENCIDA|VENCIDAS)$/i;
+
+// Parte el texto en segmentos {tipo: 'texto'|'fuerte'} sin usar v-html.
+const enfatizar = (texto) => {
+    if (!texto) return [];
+    const out = [];
+    let ultimo = 0;
+    PATRON_ENFASIS.lastIndex = 0;
+    let m;
+    while ((m = PATRON_ENFASIS.exec(texto)) !== null) {
+        if (m.index > ultimo) out.push({ tipo: 'texto', texto: texto.slice(ultimo, m.index) });
+        out.push({ tipo: 'fuerte', texto: m[0], peligro: CLASE_PELIGRO.test(m[0]) });
+        ultimo = m.index + m[0].length;
+        if (m[0].length === 0) PATRON_ENFASIS.lastIndex++;
+    }
+    if (ultimo < texto.length) out.push({ tipo: 'texto', texto: texto.slice(ultimo) });
+    return out;
+};
+
+// Divide el mensaje en texto + enlace útil. Si no hay acción válida
+// (sin permiso o etiqueta ausente), devuelve solo texto. Nunca usa v-html.
+const segmentarMensaje = (data) => {
+    const message = String(data?.message ?? '');
+    let extra = data?.extra_data ?? null;
+    // Defensivo: la API puede entregar extra_data como objeto o como string JSON.
+    if (typeof extra === 'string' && extra !== '') {
+        try {
+            extra = JSON.parse(extra);
+        } catch {
+            extra = null;
+        }
+    }
+    const action = extra?.action ?? null;
+    const etiqueta = action?.label ? String(action.label) : '';
+    const conEnlace = etiqueta !== ''
+        && typeof action.path === 'string' && action.path !== ''
+        && message.includes(etiqueta)
+        && (!action.permission || permissionsStore.can(action.permission));
+
+    if (!conEnlace) return enfatizar(message);
+
+    const i = message.indexOf(etiqueta);
+    const segmentos = enfatizar(message.slice(0, i));
+    segmentos.push({
+        tipo: 'enlace',
+        texto: etiqueta,
+        path: action.path,
+        titulo: action.aria_label || etiqueta,
+        aria: action.aria_label || etiqueta,
+    });
+    segmentos.push(...enfatizar(message.slice(i + etiqueta.length)));
+    return segmentos;
 };
 
 const formatDate = (dateStr) => {
@@ -266,6 +357,7 @@ const loadData = async () => {
     const filters = {};
     if (filterStatus.value) filters.status = filterStatus.value;
     if (filterType.value) filters.type = filterType.value;
+    if (filterPriority.value) filters.priority = filterPriority.value;
     
     await store.fetchNotifications(currentPage.value, filters);
 };
@@ -308,28 +400,11 @@ const handleMarkAsRead = async (uuid) => {
     await store.markAsRead(uuid);
 };
 
-const handleDelete = async (uuid) => {
-    const result = await Swal.fire({
-        title: '¿Eliminar alerta?',
-        text: 'Esta acción no se puede deshacer.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#e63757'
-    });
-
-    if (result.isConfirmed) {
-        await store.deleteNotification(uuid);
-        Swal.fire({
-            icon: 'success',
-            title: 'Eliminada',
-            text: 'La alerta ha sido eliminada.',
-            timer: 1500,
-            showConfirmButton: false
-        });
-    }
-};
+// Menú contextual por fila: las mismas opciones del perfil del vehículo
+// (Ver documentos, Completar, Editar documento, Registrar nuevo),
+// filtradas por el permiso de cada destino.
+const accionesVisibles = (data) => (data?.extra_data?.actions ?? [])
+    .filter((a) => a && a.path && (!a.permission || permissionsStore.can(a.permission)));
 
 onMounted(async () => {
     try {
@@ -402,6 +477,24 @@ onMounted(async () => {
     background: #0d6efd !important;
     border-color: #0d6efd !important;
     color: #fff !important;
+}
+
+/* Enlace útil dentro del mensaje: hipervínculo subrayado estilo Word */
+.alerta-enlace {
+    color: var(--bs-primary, #2c7be5);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.alerta-enlace:hover {
+    color: #1a4fa0;
+}
+
+.alerta-enlace:focus-visible {
+    outline: 2px solid var(--bs-primary, #2c7be5);
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
 /* Badges */

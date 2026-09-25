@@ -159,6 +159,7 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEmploymentContractsStore } from '../store/employmentContracts.store.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import { handleGlobalError } from '@/utils/error-handler.js';
 

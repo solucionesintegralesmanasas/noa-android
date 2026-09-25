@@ -278,7 +278,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useVehicleDocumentsStore } from '../store/vehicleDocuments.store.js';
-import { useAuthStore, useUserStore, usePermissionsStore } from '@store';
+import { usePermissionsStore } from '@store';
 import { useTable } from '@/hooks/useTable.js';
 import { useTableActions } from '@/hooks/useTableActions.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
@@ -292,13 +292,10 @@ import vehicleDocumentsService from '../services/vehicleDocuments.service.js';
 const route = useRoute();
 const router = useRouter();
 const store = useVehicleDocumentsStore();
-const authStore = useAuthStore();
-const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
 
 const isViewLoading = ref(true);
 const searchQuery = ref('');
-const pageTitle = computed(() => route.meta.title || 'Documentos');
 const showPoliciesModal = ref(false);
 const selectedPolicies = ref(null);
 
@@ -338,14 +335,6 @@ const getDocumentNumberHeader = (documentType) => {
         case 'poliza': return 'Número de Póliza';
         default: return 'Número de Documento';
     }
-};
-
-const getThirdPartyName = (thirdParty) => {
-    if (!thirdParty) return '-';
-    if (thirdParty.person_type === 'JURIDICA' || thirdParty.company_name || thirdParty.trade_name) {
-        return thirdParty.trade_name || thirdParty.company_name || `${thirdParty.first_name || ''} ${thirdParty.last_name || ''}`.trim();
-    }
-    return `${thirdParty.first_name || ''} ${thirdParty.last_name || ''}`.trim() || thirdParty.email || '-';
 };
 
 const openPoliciesModal = (row) => {
@@ -391,12 +380,6 @@ const goToEdit = (uuid) => {
     const type = route.params.documentType;
     if (type) return router.push(`/vehiculos-documentos/${type}/editar/${uuid}`);
     return router.push(`/vehiculos-documentos/editar/${uuid}`);
-};
-
-const goToDetail = (uuid) => {
-    const type = route.params.documentType;
-    if (type) return router.push(`/vehiculos-documentos/${type}/perfil/${uuid}`);
-    return router.push(`/vehiculos-documentos/perfil/${uuid}`);
 };
 
 const handleDelete = (item) => confirmDelete(item, {

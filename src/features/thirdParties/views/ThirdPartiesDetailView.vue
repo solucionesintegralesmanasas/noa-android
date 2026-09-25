@@ -103,27 +103,23 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useThirdPartiesStore } from '../store/thirdParties.store.js';
-import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import Swal from 'sweetalert2';
 
 
 /** Computed para BasePageHeader (evita expresiones complejas en el template) */
 const pageTitle = computed(() => 'Perfil de ' + 'ThirdParties');
-const pageSubtitle = computed(() => isViewLoading ? '' : 'Detalle completo del registro');
+const pageSubtitle = computed(() => isViewLoading.value ? '' : 'Detalle completo del registro');
 const breadcrumbs = computed(() => [ { label: 'ThirdParties', to: '/terceros', }, { label: 'Perfil' }, ]);
 
 const route = useRoute();
 const router = useRouter();
 const store = useThirdPartiesStore();
-const permissionsStore = usePermissionsStore();
 
 const item = computed(() => store.selectedItem || {});
 const isViewLoading = ref(true);
 
-const can = (action) => permissionsStore.can(action);
 const goBack = () => router.push('/terceros');
-const goToEdit = () => router.push(`/terceros/editar/${route.params.id}`);
 
 onMounted(async () => {
     isViewLoading.value = true;

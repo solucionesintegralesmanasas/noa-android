@@ -1,8 +1,10 @@
 <template>
-    <BasePageHeader :title="'Listado de ' + 'Fuec'" description="Gestión del módulo en el sistema."
-        icon="fad fa-clipboard-list text-primary" :show-refresh="true" :show-create="can('fuec.create')" :show-bg="true"
-        :loading="isViewLoading || store.loading" :compact="true"
-        :breadcrumbs="[{ label: 'Fuec' }, { label: 'Listado' }]" @refresh="refreshTable" @create="goToCreate" />
+    <!-- VISTA ESCRITORIO / TABLET -->
+    <div class="d-none d-md-block">
+        <BasePageHeader :title="'Listado de ' + 'Fuec'" description="Gestión del módulo en el sistema."
+            icon="fad fa-clipboard-list text-primary" :show-refresh="true" :show-create="can('fuec.create')" :show-bg="true"
+            :loading="isViewLoading || store.loading" :compact="true"
+            :breadcrumbs="[{ label: 'Fuec' }, { label: 'Listado' }]" @refresh="refreshTable" @create="goToCreate" />
 
     <!-- BARRA DE BÚSQUEDA -->
     <div class="card border-0 shadow-sm mb-3 fade-in-up" style="animation-delay: 0.1s;">
@@ -78,7 +80,8 @@
 
                 <!-- DATATABLE (Paginación Server-Side) -->
                 <div v-else class="card-body p-0">
-                    <div class="table-responsive scrollbar">
+                    <!-- Vista Escritorio -->
+                    <div class="table-responsive scrollbar d-none d-md-block">
                         <DataTable :value="store.items" lazy :paginator="true" :rows="store.pagination.itemsPerPage"
                             :totalRecords="store.pagination.totalItems" :first="(store.pagination.currentPage - 1) *
                                 store.pagination.itemsPerPage
@@ -175,6 +178,87 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <!-- VISTA MÓVIL ANDROID CAPACITOR (Pantalla completa de borde a borde) -->
+    <div class="d-md-none w-100 px-1 pt-1 pb-3 mobile-fuec-feed">
+        <MobileSectionHeader
+            title="Extractos de Contrato (FUEC)"
+            icon-class="fas fa-file-contract"
+            icon-bg="#22c55e"
+            :badge="store.pagination.totalItems ? `${store.pagination.totalItems}` : '0'"
+        >
+            <template #action>
+                <button v-if="can('fuec.create')" type="button" class="btn btn-primary btn-sm py-1 px-2 fs-11 rounded-3" @click="goToCreate">
+                    <i class="fas fa-plus me-1" aria-hidden="true"></i> Nuevo
+                </button>
+            </template>
+        </MobileSectionHeader>
+
+        <div v-if="store.items && store.items.length > 0" class="d-flex flex-column w-100">
+            <MobileCard
+                v-for="item in store.items"
+                :key="item.uuid"
+                variant="green"
+                :title="item.number_fuec ? `FUEC: ${item.number_fuec}` : 'FUEC PENDIENTE'"
+                :subtitle="item.contract_number_display ? `Contrato: ${item.contract_number_display}` : 'Extracto Único de Contrato'"
+                :badge="item.status"
+                icon-class="fas fa-file-contract"
+            >
+                <div class="py-2 border-top border-bottom my-1">
+                    <div class="d-flex align-items-center gap-2 text-dark fs-12 fw-semibold">
+                        <i class="fad fa-map-marker-alt text-danger" aria-hidden="true"></i>
+                        <span>{{ item.origin_route || 'Origen' }}</span>
+                        <i class="fas fa-arrow-right text-muted fs-10" aria-hidden="true"></i>
+                        <span>{{ item.destination_route || 'Destino' }}</span>
+                    </div>
+                    <div class="text-muted fs-11 mt-1">
+                        <i class="far fa-calendar-alt me-1" aria-hidden="true"></i>Expedido: {{ dateUtils.format(item.issue_date) }}
+                    </div>
+                </div>
+
+                <template #actions>
+                    <button v-if="can('fuec.profile')" class="mc-btn-primary" type="button" @click="goToDetail(item.uuid)">
+                        <i class="fad fa-file-check" aria-hidden="true"></i>
+                        <span>Doc. en Ruta</span>
+                    </button>
+                    <button class="mc-btn-secondary" type="button" @click="downloadPdfServer(item)">
+                        <i class="fad fa-file-pdf text-danger" aria-hidden="true"></i>
+                        <span>PDF</span>
+                    </button>
+                    <button v-if="can('fuec.update')" class="mc-btn-secondary" type="button" @click="goToEdit(item.uuid)">
+                        <i class="fad fa-edit text-warning" aria-hidden="true"></i>
+                        <span>Editar</span>
+                    </button>
+                </template>
+            </MobileCard>
+        </div>
+
+        <MobileEmptyState
+            v-else
+            emoji="📜"
+            title="Sin FUECs asignados"
+            description="No hay extractos únicos de contrato activos o asignados a tus vehículos."
+            action-text="Crear FUEC"
+            action-icon="fas fa-plus"
+            @action="goToCreate"
+        />
+
+        <!-- Paginación Móvil Táctil -->
+        <div v-if="store.pagination.totalPages > 1" class="d-flex justify-content-between align-items-center mt-2 pt-1 px-1">
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage <= 1"
+                @click="onPageChange({ page: store.pagination.currentPage - 2, rows: store.pagination.itemsPerPage })">
+                <i class="fas fa-chevron-left me-1" aria-hidden="true"></i> Anterior
+            </button>
+            <span class="fs-11 text-muted fw-semibold">
+                {{ store.pagination.currentPage }} / {{ store.pagination.totalPages }}
+            </span>
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage >= store.pagination.totalPages"
+                @click="onPageChange({ page: store.pagination.currentPage, rows: store.pagination.itemsPerPage })">
+                Siguiente <i class="fas fa-chevron-right ms-1" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
 </template>
 
 <script setup>
@@ -190,6 +274,9 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Swal from 'sweetalert2';
 import dateUtils from '@/utils/date.js';
+import MobileCard from '@/components/mobile/MobileCard.vue';
+import MobileSectionHeader from '@/components/mobile/MobileSectionHeader.vue';
+import MobileEmptyState from '@/components/mobile/MobileEmptyState.vue';
 
 const router = useRouter();
 const store = useFuecStore();

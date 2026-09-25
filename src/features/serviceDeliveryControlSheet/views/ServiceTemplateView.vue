@@ -32,7 +32,7 @@
                     <div class="card-body p-2 p-md-3">
                         <div class="stepper-track">
                             <div
-                                v-for="s in steps"
+                                v-for="s in pasosVisibles"
                                 :key="s.n"
                                 class="stepper-item"
                                 :class="{
@@ -62,6 +62,10 @@
 
                     <!-- ───────────────────────────────────────────────────
                          PASO 1: SELECCIÓN DEL SERVICIO ASIGNADO
+                         El filtro de proyecto solo se muestra cuando hay más de
+                         un proyecto (o no es conductor). El conductor solo ve
+                         sus proyectos asignados. Con proyecto único el filtro se
+                         oculta y con servicio único se avanza directo al paso 2.
                     ─────────────────────────────────────────────────── -->
                     <div v-if="currentStep === 1" class="fade-in">
                         <div class="card border-0 shadow-sm mb-3 fade-in-up">
@@ -78,9 +82,20 @@
                             </div>
 
                             <div class="card-body p-3 p-md-4">
+                                <div v-if="sinProyectosAsignados" class="alert alert-warning d-flex align-items-start gap-3 mb-3" role="alert">
+                                    <i class="fad fa-triangle-exclamation mt-1" aria-hidden="true"></i>
+                                    <div>
+                                        <strong class="d-block">Sin proyectos asignados</strong>
+                                        <span>No tiene proyectos asignados. Comuníquese con su coordinador para que le asignen un proyecto y un servicio.</span>
+                                    </div>
+                                </div>
+                                <div v-else-if="isConductor && proyectosList.length === 1" class="alert alert-info d-flex align-items-center gap-2 mb-3" role="status">
+                                    <i class="fad fa-briefcase" aria-hidden="true"></i>
+                                    <span>Proyecto asignado: <strong>{{ proyectosList[0]?.project_name }}</strong></span>
+                                </div>
                                 <div class="row g-3">
-                                    <!-- Filtro de Proyecto -->
-                                    <div class="col-12 col-md-5">
+                                    <!-- Filtro de Proyecto: solo si hay más de un proyecto (o no es conductor) -->
+                                    <div v-if="debeMostrarFiltroProyecto" class="col-12 col-md-5">
                                         <label class="form-label fw-medium text-700" style="font-size: 0.9rem;" for="proyectoFiltro">
                                             <i class="fad fa-folder text-primary me-1"></i> Filtrar por Proyecto
                                         </label>
@@ -93,17 +108,20 @@
                                     </div>
 
                                     <!-- Selector de Servicio -->
-                                    <div class="col-12 col-md-7">
+                                    <div class="col-12" :class="debeMostrarFiltroProyecto ? 'col-md-7' : ''">
                                         <label class="form-label required fw-medium text-700" style="font-size: 0.9rem;" for="servicioId">
                                             <i class="fad fa-bus-alt text-primary me-1"></i> Planilla / Servicio Asignado
                                         </label>
                                         <PrimeSelect
-                                            input-id="servicioId"
+                                            :input-id="'servicioId'"
                                             v-model="formData.servicioId"
                                             :options="serviciosFiltrados" option-value="uuid"
                                             :option-label="(s) => `${s.daily_route || recorridosTextoDe(s)} · ${tipoCorto(s.type_of_control_sheet)}${s.project?.project_name ? ' · ' + s.project.project_name : ''}`"
                                             placeholder="— Seleccione un servicio —" showClear filter class="w-100"
                                             :invalid="!!validationErrors.servicioId"
+                                            :disabled="sinProyectosAsignados"
+                                            :aria-invalid="!!validationErrors.servicioId"
+                                            :aria-describedby="validationErrors.servicioId ? 'f-servicioId-error' : undefined"
                                         />
                                         <div v-if="validationErrors.servicioId" class="invalid-feedback d-block mt-1" id="f-servicioId-error" role="alert">
                                             {{ validationErrors.servicioId }}
@@ -226,7 +244,11 @@
 
                             <!-- Footer de navegación -->
                             <div class="card-footer bg-white py-3 px-3 px-md-4 border-top text-end">
-                                <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold d-inline-flex align-items-center gap-2" @click="goStep2">
+                                <button v-if="sinProyectosAsignados" class="btn btn-falcon-default rounded-pill px-4 fw-semibold d-inline-flex align-items-center gap-2" type="button" @click="goBack">
+                                    <i class="fas fa-arrow-left"></i>
+                                    <span>Regresar</span>
+                                </button>
+                                <button v-else class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold d-inline-flex align-items-center gap-2" @click="goStep2">
                                     <span>Continuar al Inicio de Servicio</span>
                                     <i class="fas fa-arrow-right"></i>
                                 </button>
@@ -314,7 +336,7 @@
                                             <i class="fad fa-file-certificate text-primary me-1"></i> N.° Planilla / FUEC
                                         </label>
                                         <PrimeSelect
-                                            input-id="fuec_uuid"
+                                            :input-id="'fuec_uuid'"
                                             v-model="formData.fuec_uuid"
                                             :options="fuecsCatalogo" option-value="uuid"
                                             :option-label="(item) => item.sheet_number || item.fuec_number"
@@ -1417,10 +1439,12 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from '@/utils/toast.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import { useServiceDeliveryControlSheetStore } from '../store/serviceDeliveryControlSheet.store.js';
 import serviceDeliveryControlSheetService from '../services/serviceDeliveryControlSheet.service.js';
 import vehicleInspectionsService from '../../vehicleInspections/services/vehicleInspections.service.js';
-import { usePermissionsStore, useUserStore } from '@store';
+import { useUserStore } from '@store';
+import { usePermissionsStore } from '@store/modules/permissions.js';
 import { useDriverTrackingStore } from '../../tracking/store/driverTracking.store.js';
 import FirmaPad from '../components/FirmaPad.vue';
 
@@ -1428,8 +1452,8 @@ import FirmaPad from '../components/FirmaPad.vue';
 const route = useRoute();
 const router = useRouter();
 const store = useServiceDeliveryControlSheetStore();
-const permissionsStore = usePermissionsStore();
 const userStore = useUserStore();
+const permissionsStore = usePermissionsStore();
 const driverTracking = useDriverTrackingStore();
 
 // Etiqueta del último envío GPS al servidor (visible en Paso 3 En Ruta).
@@ -1473,7 +1497,6 @@ const activarGpsOperativo = async () => {
 };
 
 // --- ESTADOS ---
-const isSuperAdmin = computed(() => permissionsStore.roles?.includes('SUPERADMIN'));
 const isViewLoading = ref(true);
 const submitting = ref(false);
 const validationErrors = reactive({});
@@ -1630,6 +1653,32 @@ const serviciosCatalogo = ref([]);
 const fuecsCatalogo = ref([]);
 const proyectosList = ref([]);
 const proyectoFiltro = ref('');
+const proyectosCargados = ref(false);
+
+// Conductor autenticado: solo ve sus proyectos asignados (project_driver_vehicles.is_active=1).
+// El Paso 1 completo (con filtro de proyecto) solo se muestra si tiene más de un proyecto.
+const isConductor = computed(() => {
+    try {
+        return permissionsStore.hasRole('CONDUCTOR');
+    } catch {
+        return false;
+    }
+});
+const conductorUuid = computed(() => userStore.uuid_driver || userStore.third_party_uuid || '');
+const debeMostrarFiltroProyecto = computed(() => !isConductor.value || proyectosList.value.length > 1);
+const debeMostrarPaso1 = computed(() => {
+    if (!isConductor.value) return true;
+    if (!proyectosCargados.value) return true;
+    return proyectosList.value.length > 1;
+});
+const pasosVisibles = computed(() => {
+    if (debeMostrarPaso1.value) return steps;
+    // Con proyecto único el paso 1 se omite del stepper, salvo que se esté
+    // eligiendo servicio (sin servicio seleccionado aún).
+    if (currentStep.value === 1 && !formData.servicioId) return steps;
+    return steps.filter(s => s.n !== 1);
+});
+const sinProyectosAsignados = computed(() => isConductor.value && proyectosCargados.value && proyectosList.value.length === 0);
 
 // --- COMPUTADOS ---
 const servicioSeleccionado = computed(() => {
@@ -2029,7 +2078,7 @@ const leerProgreso = () => {
 };
 
 const limpiarProgreso = () => {
-    try { localStorage.removeItem(PROGRESO_KEY); } catch (e) {}
+    try { localStorage.removeItem(PROGRESO_KEY); } catch (e) { /* localStorage puede no estar disponible: se ignora */ }
 };
 
 const restaurarProgreso = async () => {
@@ -2081,6 +2130,7 @@ const goBack = () => {
 };
 
 const goStep = (n) => {
+    if (n === 1 && !debeMostrarPaso1.value) return;
     if (n === 4 && rutasMulti.value) {
         if (cierresRecorridos.value.length !== recorridosPlanillaActiva.value.length) {
             inicializarCierresPorRecorrido();
@@ -2099,12 +2149,17 @@ const goStep = (n) => {
 };
 
 const handleStepClick = (n) => {
+    if (n === 1 && !debeMostrarPaso1.value) return;
     if (currentStep.value > n) {
         goStep(n);
     }
 };
 
 const goStep2 = () => {
+    if (sinProyectosAsignados.value) {
+        toast('Sin proyectos', 'No tiene proyectos asignados. Comuníquese con su coordinador.', 'warning');
+        return;
+    }
     if (!formData.servicioId) {
         validationErrors.servicioId = 'Debe seleccionar un servicio';
         return;
@@ -2706,20 +2761,92 @@ onMounted(async () => {
 
     try {
         isViewLoading.value = true;
+        // Asegura roles antes de decidir el filtrado por conductor.
+        try {
+            if (!permissionsStore.isLoaded) await permissionsStore.load();
+        } catch { /* roles persistidos: se continúa con lo disponible */ }
         const resServ = await serviceDeliveryControlSheetService.listAll();
         const listServ = resServ?.data?.data ?? resServ?.data ?? resServ ?? [];
         const validList = Array.isArray(listServ) ? listServ : [];
-        serviciosCatalogo.value = validList.filter(s => s.is_active == 1 || s.is_active === true);
 
-        const catalogs = await store.loadFormOptions();
+        const esConductor = isConductor.value;
+        const driverUuid = conductorUuid.value;
+        const afiliadoUuid = userStore.third_party_uuid || '';
+        const companyUuid = userStore.company_uuid;
+        // El pivote puede guardar el UUID del conductor (uuid_driver) o el del
+        // afiliado según el flujo de asignación: se consulta con ambos y se fusiona.
+        const uuidsConductor = [...new Set([driverUuid, afiliadoUuid].filter(Boolean))];
+        const filtroConductor = esConductor && uuidsConductor.length ? uuidsConductor[0] : null;
+
+        const catalogs = await store.loadFormOptions(companyUuid, filtroConductor);
         fuecsCatalogo.value = catalogs.fuecs || [];
         try {
-            const { useUserStore } = await import('@store');
-            const userStore = useUserStore();
-            if (userStore.company_uuid) await store.loadProjects(userStore.company_uuid);
-            proyectosList.value = store.projects || catalogs.projects || [];
+            if (companyUuid) {
+                await store.loadProjects(companyUuid, filtroConductor);
+                let lista = store.projects || catalogs.projects || [];
+                // Si hay segundo UUID distinto (conductor + afiliado), fusionar resultados.
+                if (esConductor && uuidsConductor.length > 1) {
+                    const extra = await serviceDeliveryControlSheetService.listProjects(companyUuid, uuidsConductor[1]);
+                    const vistos = new Set(lista.map(p => p.uuid));
+                    (Array.isArray(extra) ? extra : []).forEach(p => {
+                        if (p?.uuid && !vistos.has(p.uuid)) {
+                            vistos.add(p.uuid);
+                            lista.push(p);
+                        }
+                    });
+                    store.projects = lista;
+                }
+                proyectosList.value = lista;
+            } else {
+                proyectosList.value = catalogs.projects || [];
+            }
         } catch (e) {
             proyectosList.value = catalogs.projects || [];
+        }
+        proyectosCargados.value = true;
+
+        if (esConductor && uuidsConductor.length) {
+            const permitidos = new Set((proyectosList.value || []).map(p => p.uuid));
+            serviciosCatalogo.value = validList.filter(s => {
+                if (!(s.is_active == 1 || s.is_active === true)) return false;
+                const projUuid = s.project_uuid || s.project?.uuid;
+                if (projUuid && permitidos.has(projUuid)) return true;
+                const conductorPlanilla = s.internal_control?.third_party_uuid || '';
+                return !!conductorPlanilla && uuidsConductor.includes(conductorPlanilla);
+            });
+        } else {
+            serviciosCatalogo.value = validList.filter(s => s.is_active == 1 || s.is_active === true);
+        }
+
+        // Si hay servicio en curso (query o localStorage), se respeta y no se auto-salta.
+        const hayRetomar = !!(route.query.service_uuid || route.query.id || leerProgreso()?.servicioId);
+        if (hayRetomar) {
+            await restaurarProgreso();
+            return;
+        }
+
+        // Conductor con un solo proyecto: preseleccionar y, si hay un único
+        // servicio, avanzar directo al paso 2 (inicio). Con varios servicios se
+        // queda en el paso 1 simplificado (sin filtro de proyecto).
+        if (esConductor && proyectosList.value.length === 1) {
+            const unico = proyectosList.value[0];
+            proyectoFiltro.value = unico.uuid;
+            const delProyecto = serviciosCatalogo.value.filter(
+                s => (s.project_uuid || s.project?.uuid) === unico.uuid
+            );
+            if (delProyecto.length === 1) {
+                formData.servicioId = delProyecto[0].uuid;
+                currentStep.value = 2;
+            } else {
+                currentStep.value = 1;
+            }
+            return;
+        }
+
+        if (esConductor && proyectosList.value.length === 0) {
+            serviciosCatalogo.value = [];
+            currentStep.value = 1;
+            return;
         }
 
         // Retomar servicio en curso (recarga o reingreso): paso 3 si sigue en ruta.

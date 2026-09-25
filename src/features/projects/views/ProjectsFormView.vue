@@ -236,6 +236,7 @@ import { useProjectsStore } from '../store/projects.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
 import { toast } from '@/utils/toast.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import { getMediaUrl } from '@/utils/media.js';
 
@@ -330,20 +331,6 @@ const addAssignment = () => {
 const removeAssignment = (index) => {
     if (formData.assignments.length === 1) return;
     formData.assignments.splice(index, 1);
-};
-
-const prettyField = (field) => {
-    const map = {
-        project_name: 'Nombre del proyecto',
-        start_date: 'Fecha de inicio',
-        completion_date: 'Fecha de finalización',
-        project_value: 'Valor del proyecto',
-        purchase_order: 'Orden de compra',
-        assignments: 'Asignaciones',
-        vehicles: 'Vehículos',
-        third_parties: 'Conductores',
-    };
-    return map[field] || field;
 };
 
 /** Valida los datos del formulario antes de enviar. */

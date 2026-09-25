@@ -434,6 +434,29 @@
                                                         validationErrors.notification_email }}</div>
                                             </div>
                                         </div>
+
+                                        <div class="col-12">
+                                            <div class="col-12 col-md-8">
+                                                <label class="form-label" for="f-own_company_names">Nombres de la
+                                                    empresa propia</label>
+                                                <textarea id="f-own_company_names" v-model="ownCompanyNamesText" rows="3"
+                                                    class="form-control"
+                                                    :class="{ 'is-invalid': validationErrors.own_company_names }"
+                                                    :aria-invalid="!!validationErrors.own_company_names"
+                                                    :aria-describedby="validationErrors.own_company_names ? 'f-own_company_names-error' : undefined"
+                                                    placeholder="Un nombre por línea. Ej: TRANSPORTES ESPECIALES SIN BARRERAS S.A.S." />
+                                                <div class="invalid-feedback"
+                                                    v-if="validationErrors.own_company_names"
+                                                    id="f-own_company_names-error" role="alert">{{
+                                                        validationErrors.own_company_names }}</div>
+                                                <p class="text-muted small mb-0 mt-1">
+                                                    Nombres que identifican a la empresa propia en las tarjetas de
+                                                    operación. Las alertas de esos vehículos se marcan como
+                                                    prioritarias. Si se deja vacío se usa el nombre registrado de la
+                                                    empresa.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -999,6 +1022,27 @@ const formData = reactive({
 });
 
 // --- VALIDACION Y SUBMIT ---
+const ownCompanyNamesText = ref('');
+
+const parseOwnCompanyNames = (text) => String(text || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+
+const formatOwnCompanyNames = (value) => {
+    const clean = (list) => list.filter((v) => typeof v === 'string' && v.trim() !== '').join('\n');
+    if (Array.isArray(value)) return clean(value);
+    if (typeof value === 'string' && value.trim() !== '') {
+        try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) return clean(parsed);
+        } catch {
+            return value;
+        }
+    }
+    return '';
+};
+
 const validateForm = () => {
     Object.keys(validationErrors).forEach(key => delete validationErrors[key]);
 
@@ -1040,6 +1084,11 @@ const validateForm = () => {
                 validationErrors.notification_email = 'Ingrese un correo electrónico válido';
             }
         }
+    }
+
+    const tooLong = parseOwnCompanyNames(ownCompanyNamesText.value).filter((line) => line.length > 255);
+    if (tooLong.length > 0) {
+        validationErrors.own_company_names = 'Cada nombre debe tener máximo 255 caracteres';
     }
 
     // Validación de número interno
@@ -1376,6 +1425,9 @@ const handleSubmit = async () => {
             payload.notification_email = null;
         }
 
+        // Nombres de empresa propia: del textarea (uno por línea) al arreglo.
+        payload.own_company_names = parseOwnCompanyNames(ownCompanyNamesText.value);
+
         // Pólizas corporativas nulas si no se usan
         if (!payload.fuec_use_corporate_policies) {
             payload.corporate_rcc_insurer = null;
@@ -1434,6 +1486,7 @@ const handleSubmit = async () => {
                 platform_fee_type: updatedConfig.platform_fee_type || 'VEHICLE_CLASS',
                 platform_fee_rates: parsePlatformFeeRates(updatedConfig.platform_fee_rates),
             });
+            ownCompanyNamesText.value = formatOwnCompanyNames(updatedConfig.own_company_names);
 
             // Sincronizar URLs de imágenes de configuración
             if (updatedConfig.ministry_logo_url) identityPreviews.ministry_logo = updatedConfig.ministry_logo_url;
@@ -1500,6 +1553,7 @@ onMounted(async () => {
                     platform_fee_type: data.platform_fee_type || 'VEHICLE_CLASS',
                     platform_fee_rates: parsePlatformFeeRates(data.platform_fee_rates),
                 });
+                ownCompanyNamesText.value = formatOwnCompanyNames(data.own_company_names);
 
                 // Cargar imágenes de configuración del sistema (logos del PDF)
                 if (data.ministry_logo_url) identityPreviews.ministry_logo = data.ministry_logo_url;

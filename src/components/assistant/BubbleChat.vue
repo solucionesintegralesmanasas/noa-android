@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from 'vue'
+import { ref, nextTick } from 'vue'
 import assistantService from '@/features/assistant/services/assistant.service.js'
 
 function timeGreeting() {
@@ -110,7 +110,7 @@ function timeGreeting() {
 }
 
 // --- Props ---
-const props = defineProps({
+defineProps({
     initialMessage: {
         type: String,
         default: 'Hola, soy NOA Assistant. ¿En qué te puedo ayudar?',

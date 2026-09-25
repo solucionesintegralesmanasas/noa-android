@@ -831,12 +831,10 @@
  */
 
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '@store/modules/auth.js';
 import loboHeroImg from '@/assets/images/lobo-express-hero.png';
 import Swal from 'sweetalert2';
 
-const router = useRouter();
 const authStore = useAuthStore();
 
 // Estado de la autenticación en el navbar
@@ -857,9 +855,6 @@ const toggleFaq = (index) => {
     activeFaqIndex.value = index;
   }
 };
-
-// Gallery (Flota)
-const activeCategory = ref('all');
 
 // Hero Carousel
 const currentHeroIndex = ref(0);
@@ -908,36 +903,6 @@ onMounted(() => {
 onUnmounted(() => {
   stopCarousel();
 });
-
-// Cotizador (Calculator)
-const calculatorForm = reactive({
-  origen: '',
-  destino: '',
-  tipo: 'bus',
-  pasajeros: '',
-  fecha: ''
-});
-const isSubmittingCalculator = ref(false);
-
-const handleCalculatorSubmit = () => {
-  isSubmittingCalculator.value = true;
-
-  // Crear mensaje para WhatsApp
-  const text = `Hola Lobo Express, deseo cotizar un servicio:\n` +
-    `- Origen: ${calculatorForm.origen}\n` +
-    `- Destino: ${calculatorForm.destino}\n` +
-    `- Vehículo: ${calculatorForm.tipo}\n` +
-    `- Pasajeros: ${calculatorForm.pasajeros}\n` +
-    `- Fecha: ${calculatorForm.fecha}`;
-
-  const encodedText = encodeURIComponent(text);
-  const whatsappUrl = `https://wa.me/573188080956?text=${encodedText}`;
-
-  setTimeout(() => {
-    isSubmittingCalculator.value = false;
-    window.open(whatsappUrl, '_blank');
-  }, 800);
-};
 
 // Formulario de Contacto
 const contactForm = reactive({

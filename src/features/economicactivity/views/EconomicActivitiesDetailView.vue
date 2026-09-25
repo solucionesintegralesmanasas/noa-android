@@ -117,27 +117,23 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEconomicActivitiesStore } from '../store/economicActivities.store.js';
-import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import Swal from 'sweetalert2';
 
 
 /** Computed para BasePageHeader (evita expresiones complejas en el template) */
 const pageTitle = computed(() => 'Perfil de ' + 'EconomicActivities');
-const pageSubtitle = computed(() => isViewLoading ? '' : 'Detalle completo del registro');
+const pageSubtitle = computed(() => isViewLoading.value ? '' : 'Detalle completo del registro');
 const breadcrumbs = computed(() => [ { label: 'EconomicActivities', to: '/empresas/actividades-economicas/listas-actividades-economicas', }, { label: 'Perfil' }, ]);
 
 const route = useRoute();
 const router = useRouter();
 const store = useEconomicActivitiesStore();
-const permissionsStore = usePermissionsStore();
 
 const item = computed(() => store.selectedItem || {});
 const isViewLoading = ref(true);
 
-const can = (action) => permissionsStore.can(action);
 const goBack = () => router.push('/empresas/actividades-economicas/listas-actividades-economicas');
-const goToEdit = () => router.push(`/empresas/actividades-economicas/editar/${route.params.id}`);
 
 const formatDate = (dateStr) => {
     if (!dateStr) return '—';

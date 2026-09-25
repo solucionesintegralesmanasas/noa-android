@@ -1,6 +1,5 @@
 import { logger } from "@utils/logger.js";
 import apiClient from "@services/api/client.js";
-import { rbac } from "@services/security/permissions/rbac.js";
 import { useUserStore } from "@store/modules/user.js";
 import { usePermissionsStore } from "@store/modules/permissions.js";
 import { Capacitor } from "@capacitor/core";
@@ -179,8 +178,9 @@ export class BaseService {
             try {
                 const base64Data = await this._blobToBase64(blob);
 
-                // Guardamos en Cache para no requerir permisos de almacenamiento
-                const savedFile = await Filesystem.writeFile({
+                // Guardamos en Cache para no requerir permisos de almacenamiento.
+                // (El resultado no se usa: el archivo queda disponible en caché.)
+                await Filesystem.writeFile({
                     path: cleanFileName,
                     data: base64Data,
                     directory: Directory.Cache,

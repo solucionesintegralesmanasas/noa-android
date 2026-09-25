@@ -10,6 +10,10 @@ const RETRYABLE_HTTP_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 const ErrorType = { HTTP: "http", NETWORK: "network", JS: "js", UNKNOWN: "unknown" };
 
+/** Detecta cancelaciones propias (AbortController/axios): siempre son silencio. */
+export const isCancelError = (err) =>
+    !!err && (err.code === "ERR_CANCELED" || err.name === "CanceledError" || err.name === "AbortError");
+
 /** Router inyectado desde plugins.js para evitar dependencia circular */
 let _router = null;
 export const setErrorRouter = (r) => { _router = r; };

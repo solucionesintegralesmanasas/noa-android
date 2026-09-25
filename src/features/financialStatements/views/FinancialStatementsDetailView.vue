@@ -146,27 +146,23 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useFinancialStatementsStore } from '../store/financialStatements.store.js';
-import { usePermissionsStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import Swal from 'sweetalert2';
 
 
 /** Computed para BasePageHeader (evita expresiones complejas en el template) */
-const pageTitle = computed(() => isViewLoading ? 'Cargando...' : `Estados financieros del año ${item.fiscal_year || ''}`);
-const pageSubtitle = computed(() => isViewLoading ? '' : 'Detalle completo del reporte financiero');
+const pageTitle = computed(() => isViewLoading.value ? 'Cargando...' : `Estados financieros del año ${item.value.fiscal_year || ''}`);
+const pageSubtitle = computed(() => isViewLoading.value ? '' : 'Detalle completo del reporte financiero');
 const breadcrumbs = computed(() => [ { label: 'Estados financieros', to: '/empresas/estados-financieros' }, { label: 'Perfil' }, ]);
 
 const route = useRoute();
 const router = useRouter();
 const store = useFinancialStatementsStore();
-const permissionsStore = usePermissionsStore();
 
 const item = computed(() => store.selectedItem || {});
 const isViewLoading = ref(true);
 
-const can = (action) => permissionsStore.can(action);
 const goBack = () => router.push('/empresas/estados-financieros');
-const goToEdit = () => router.push(`/empresas/estados-financieros/editar/${route.params.id}`);
 
 /**
  * Formatea un valor monetario.

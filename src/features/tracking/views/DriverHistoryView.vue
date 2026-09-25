@@ -16,6 +16,8 @@ const toast = useToast();
 const driverUuid = route.params.uuid;
 const startDate = ref(dayjs().subtract(7, 'day').format('YYYY-MM-DD'));
 const endDate = ref(dayjs().format('YYYY-MM-DD'));
+// Mismo tope que el backend (LocationHistoryService::RANGO_MAXIMO_DIAS).
+const RANGO_MAXIMO_DIAS = 31;
 
 const loading = ref(false);
 const capturingMap = ref(false);
@@ -24,59 +26,32 @@ let polylineLayer = null;
 let startMarker = null;
 let endMarker = null;
 
-const totalDistance = computed(() => {
-    const history = store.driverHistory;
-    if (history.length < 2) return 0;
-    let distance = 0;
-    for (let i = 1; i < history.length; i++) {
-        distance += haversine(
-            parseFloat(history[i - 1].latitude),
-            parseFloat(history[i - 1].longitude),
-            parseFloat(history[i].latitude),
-            parseFloat(history[i].longitude)
-        );
-    }
-    return (distance / 1000).toFixed(2);
-});
+const rango = computed(() => store.stats?.range || null);
 
-const totalPoints = computed(() => store.driverHistory.length);
+const totalDistance = computed(() => rango.value?.total_distance_km ?? 0);
+const totalPoints = computed(() => rango.value?.total_points ?? 0);
 
 const duration = computed(() => {
-    const history = store.driverHistory;
-    if (!history.length) return '—';
-    const first = dayjs(history[0].recorded_at);
-    const last = dayjs(history[history.length - 1].recorded_at);
-    const minutes = last.diff(first, 'minute');
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+    const m = rango.value?.duration_minutes;
+    if (m === null || m === undefined) return '—';
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    return `${String(h).padStart(2, '0')}h ${String(mm).padStart(2, '0')}m`;
 });
 
-const avgSpeed = computed(() => {
-    const moving = store.driverHistory.filter((p) => parseFloat(p.speed) > 0);
-    if (!moving.length) return 0;
-    return (moving.reduce((a, p) => a + parseFloat(p.speed), 0) / moving.length).toFixed(1);
-});
+const avgSpeed = computed(() => rango.value?.avg_speed_kmh ?? 0);
 
-const maxSpeed = computed(() => {
-    if (!store.driverHistory.length) return 0;
-    return Math.max(...store.driverHistory.map((p) => parseFloat(p.speed))).toFixed(1);
-});
-
-function haversine(lat1, lng1, lat2, lng2) {
-    const R = 6371000;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng / 2) ** 2;
-    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+const maxSpeed = computed(() => rango.value?.max_speed_kmh ?? 0);
 
 async function loadHistory() {
+    if (dayjs(endDate.value).diff(dayjs(startDate.value), 'day') > RANGO_MAXIMO_DIAS) {
+        toast.error(`El rango máximo permitido es de ${RANGO_MAXIMO_DIAS} días`);
+        return;
+    }
     loading.value = true;
-    await store.fetchDriverHistory(driverUuid, startDate.value, endDate.value);
-    await store.fetchDriverStats(driverUuid);
+    // Mapa: trazado decimado (ARQ-002). Cards: agregados del rango (store.stats).
+    await store.fetchDriverHistory(driverUuid, startDate.value, endDate.value, { mode: 'map', max_points: 1000 });
+    await store.fetchDriverStats(driverUuid, startDate.value, endDate.value);
     drawRoute();
     loading.value = false;
 }

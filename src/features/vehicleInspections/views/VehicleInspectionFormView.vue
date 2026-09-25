@@ -234,12 +234,11 @@ import { toast } from '@/utils/toast.js';
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useVehicleInspectionsStore } from '../store/vehicleInspections.store.js';
-import { useAuthStore } from '@/store/modules/auth.js';
 import { usePermissionsStore, useUserStore } from '@store';
-import apiClient from '@/services/api/client.js';
 import VehicleInspectionsService from '../services/vehicleInspections.service.js';
 import ProjectsService from '../../projects/services/projects.service.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import Swal from 'sweetalert2';
 
@@ -894,5 +893,20 @@ onMounted(async () => {
     font-style: italic;
     margin-top: 0.1rem;
     display: block;
+}
+
+@media (max-width: 768px) {
+    .btn-status {
+        width: 38px;
+        height: 38px;
+        font-size: 0.85rem;
+    }
+    .inspection-item {
+        padding: 10px 8px !important;
+        min-height: 48px;
+    }
+    .category-header {
+        padding: 10px 12px !important;
+    }
 }
 </style>

@@ -229,6 +229,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useBusinessCollaborationAgreementsStore } from '../store/businessCollaborationAgreements.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 
 const route = useRoute();
@@ -241,8 +242,6 @@ const isSuperAdmin = computed(() => permissionsStore.roles?.includes('SUPERADMIN
 
 const isEditMode = computed(() => route.params.id !== undefined);
 
-/** Vehículo que originó el flujo (alta inicial o perfil). */
-const wizardUuid = computed(() => (route.query.wizard ? String(route.query.wizard) : null));
 /** Ruta a la que volver al guardar/cancelar cuando viene de otro flujo. */
 const returnTo = computed(() => (route.query.retorno ? String(route.query.retorno) : null));
 /** El convenio se abrió automáticamente tras guardar una tarjeta externa. */

@@ -1,9 +1,11 @@
-﻿<template>
-    <BasePageHeader title="Listado de Planillas de Control" description="GestiÃ³n de planillas de control vehicular en el sistema."
-        icon="fad fa-clipboard-list text-primary" :show-refresh="true" :show-create="true" :show-bg="true"
-        :loading="isViewLoading || store.loading" :compact="true"
-        :breadcrumbs="[{ label: 'Planillas de Control' }, { label: 'Listado' }]" @refresh="refreshTable" @create="goToCreate"
-        :canCreate="can('control_sheets.create')" />
+<template>
+    <!-- VISTA ESCRITORIO / TABLET -->
+    <div class="d-none d-md-block">
+        <BasePageHeader title="Listado de Planillas de Control" description="Gestión de planillas de control vehicular en el sistema."
+            icon="fad fa-clipboard-list text-primary" :show-refresh="true" :show-create="true" :show-bg="true"
+            :loading="isViewLoading || store.loading" :compact="true"
+            :breadcrumbs="[{ label: 'Planillas de Control' }, { label: 'Listado' }]" @refresh="refreshTable" @create="goToCreate"
+            :canCreate="can('control_sheets.create')" />
 
     <!-- BARRA DE BÃšSQUEDA -->
     <div class="card border-0 shadow-sm mb-3 fade-in-up" style="animation-delay: 0.1s;">
@@ -89,9 +91,9 @@
                     </div>
                 </div>
 
-                <!-- DATATABLE (PaginaciÃ³n Server-Side) -->
                 <div v-else class="card-body p-0">
-                    <div class="table-responsive scrollbar">
+                    <!-- Vista Escritorio -->
+                    <div class="table-responsive scrollbar d-none d-md-block">
                         <DataTable :value="store.items" lazy :paginator="true" :rows="store.pagination.itemsPerPage"
                             :totalRecords="store.pagination.totalItems"
                             :first="(store.pagination.currentPage - 1) * store.pagination.itemsPerPage"
@@ -164,10 +166,8 @@
                             <Column header="Acciones" class="text-center" style="width: 80px;"
                                 v-if="can('control_sheets.update') || can('control_sheets.delete')">
                                 <template #body="{ data }">
-                                    <!-- Más acciones (Inline Botones) -->
-                                    <button class="btn btn-falcon-default btn-sm px-2" type="button" title="Imprimir" @click="handlePrint(data)">
-                                        <i class="fad fa-print text-primary"></i>
-                                    </button>
+                                    <!-- El botón Imprimir llamaba a handlePrint(), que no existe:
+                                         los PDFs ya se abren desde la columna Documentos. -->
                                     <button v-if="permissions.edit" class="btn btn-falcon-default btn-sm px-2" type="button" title="Editar" @click="goToEdit(data.uuid)">
                                         <i class="fad fa-edit text-warning"></i>
                                     </button>
@@ -215,6 +215,83 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <!-- VISTA MÓVIL ANDROID CAPACITOR (Pantalla completa de borde a borde) -->
+    <div class="d-md-none w-100 px-1 pt-1 pb-3 mobile-control-feed">
+        <MobileSectionHeader
+            title="Planillas de Control"
+            icon-class="fas fa-clipboard-list"
+            icon-bg="#f97316"
+            :badge="store.pagination.totalItems ? `${store.pagination.totalItems}` : '0'"
+        >
+            <template #action>
+                <button v-if="can('control_sheets.create')" type="button" class="btn btn-primary btn-sm py-1 px-2 fs-11 rounded-3" @click="goToCreate">
+                    <i class="fas fa-plus me-1" aria-hidden="true"></i> Nueva
+                </button>
+            </template>
+        </MobileSectionHeader>
+
+        <div v-if="store.items && store.items.length > 0" class="d-flex flex-column w-100">
+            <MobileCard
+                v-for="item in store.items"
+                :key="item.uuid"
+                variant="orange"
+                :title="item.vehicle?.vehicle_license_plate || 'SIN PLACA'"
+                :subtitle="item.company?.business_name || 'Control de Servicio'"
+                :badge="item.is_active ? 'Activo' : 'Inactivo'"
+                icon-class="fas fa-clipboard-list"
+            >
+                <div v-if="item.observations" class="py-2 text-muted fs-11 border-top border-bottom my-1">
+                    <i class="far fa-comment-alt me-1" aria-hidden="true"></i>{{ item.observations }}
+                </div>
+
+                <template #actions>
+                    <template v-if="item.media && item.media.length > 0">
+                        <a v-for="file in item.media" :key="file.uuid"
+                            :href="file.original_url || file.url" target="_blank"
+                            class="mc-btn-primary">
+                            <i class="fad fa-file-pdf" aria-hidden="true"></i>
+                            <span>PDF</span>
+                        </a>
+                    </template>
+                    <button class="mc-btn-secondary" type="button" @click="handlePrint(item)">
+                        <i class="fad fa-print text-primary" aria-hidden="true"></i>
+                        <span>Imprimir</span>
+                    </button>
+                    <button v-if="permissions.edit" class="mc-btn-secondary" type="button" @click="goToEdit(item.uuid)">
+                        <i class="fad fa-edit text-warning" aria-hidden="true"></i>
+                        <span>Editar</span>
+                    </button>
+                </template>
+            </MobileCard>
+        </div>
+
+        <MobileEmptyState
+            v-else
+            emoji="📋"
+            title="Sin planillas de control"
+            description="No hay planillas de control registradas o asignadas para este filtro."
+            action-text="Nueva Planilla"
+            action-icon="fas fa-plus"
+            @action="goToCreate"
+        />
+
+        <!-- Paginación Móvil Táctil -->
+        <div v-if="store.pagination.totalPages > 1" class="d-flex justify-content-between align-items-center mt-2 pt-1 px-1">
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage <= 1"
+                @click="onPageChange({ page: store.pagination.currentPage - 2, rows: store.pagination.itemsPerPage })">
+                <i class="fas fa-chevron-left me-1" aria-hidden="true"></i> Anterior
+            </button>
+            <span class="fs-11 text-muted fw-semibold">
+                {{ store.pagination.currentPage }} / {{ store.pagination.totalPages }}
+            </span>
+            <button class="btn btn-light btn-sm border px-3 rounded-pill fs-11" :disabled="store.pagination.currentPage >= store.pagination.totalPages"
+                @click="onPageChange({ page: store.pagination.currentPage, rows: store.pagination.itemsPerPage })">
+                Siguiente <i class="fas fa-chevron-right ms-1" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
     <!-- MENÃš PRIMEVUE (Evita recortes en tablas/tarjetas) -->
     
 </template>
@@ -238,7 +315,9 @@ import BasePageHeader from '@/components/BasePageHeader.vue';
 import NoaTableSpinner from '@/components/NoaTableSpinner.vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-
+import MobileCard from '@/components/mobile/MobileCard.vue';
+import MobileSectionHeader from '@/components/mobile/MobileSectionHeader.vue';
+import MobileEmptyState from '@/components/mobile/MobileEmptyState.vue';
 
 const router = useRouter();
 const store = useControlSheetsStore();

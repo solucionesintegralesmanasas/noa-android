@@ -520,6 +520,7 @@ import { useVehicleDocumentsStore } from '../store/vehicleDocuments.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
 import { useNoAutocomplete } from '@/hooks/useNoAutocomplete.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
+import PrimeSelect from 'primevue/select';
 import BaseFormActions from '@/components/BaseFormActions.vue';
 import WizardProgress from '@/components/WizardProgress.vue';
 import { useDocumentWizard } from '@/hooks/useDocumentWizard.js';
