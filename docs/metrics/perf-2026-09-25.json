@@ -2,14 +2,14 @@
   "fecha": "2026-09-25",
   "dist": true,
   "metricas": {
-    "totalJS": 2822.4,
-    "totalCSS": 260.4,
+    "totalJS": 2826.2,
+    "totalCSS": 261.2,
     "vendorPrimevue": 820.9,
     "vendorUI": null,
     "vendorFeedback": 76.3,
     "vendorHttp": 40.1,
     "vendorVue": 102.4,
-    "indexJS": 132.3,
+    "indexJS": 136.1,
     "numChunksJS": 156,
     "numChunksCSS": 87
   },
@@ -30,8 +30,8 @@
       "tipo": "js"
     },
     {
-      "archivo": "index-BbcxMO19.js",
-      "kb": 132.3,
+      "archivo": "index-DWd9SEBj.js",
+      "kb": 136.1,
       "tipo": "js"
     },
     {
@@ -40,7 +40,7 @@
       "tipo": "js"
     },
     {
-      "archivo": "ServiceTemplateView-WmewAwUr.js",
+      "archivo": "ServiceTemplateView-DYuhcxj8.js",
       "kb": 93.3,
       "tipo": "js"
     },
@@ -50,12 +50,12 @@
       "tipo": "js"
     },
     {
-      "archivo": "SystemConfigurationView-B5E6fQRi.js",
+      "archivo": "SystemConfigurationView-BDPTsI1R.js",
       "kb": 52.9,
       "tipo": "js"
     },
     {
-      "archivo": "FuecFormView-DQWHz0Y8.js",
+      "archivo": "FuecFormView-htszFZJ1.js",
       "kb": 52.1,
       "tipo": "js"
     },
@@ -65,7 +65,7 @@
       "tipo": "js"
     },
     {
-      "archivo": "VehicleDocumentsFormView-BuGq3zXS.js",
+      "archivo": "VehicleDocumentsFormView-C0SQKjeD.js",
       "kb": 40,
       "tipo": "js"
     }

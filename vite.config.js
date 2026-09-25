@@ -9,6 +9,11 @@ export default defineConfig(({ mode }) => {
   const proxyTarget = env.VITE_API_PROXY_TARGET || 'http://api.transportessinbarreras.local';
 
   return {
+    // Base relativa: el APK (Capacitor) puede servirse como
+    // capacitor://localhost, https://localhost o file:// según
+    // versión de WebView/compilación. Con './' los assets del
+    // bundle siempre resuelven junto al index.html.
+    base: './',
     plugins: [vue()],
     resolve: {
       alias: {

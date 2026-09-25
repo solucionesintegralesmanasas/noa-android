@@ -59,22 +59,42 @@ jobs:
       - name: Install dependencias
         run: npm ci
 
-      - name: Sincronizar VITE_APP_VERSION con el tag
+      - name: Sincronizar versiones con el tag
         run: |
           python3 - "${{ steps.ver.outputs.version }}" <<'PY'
-          import re, sys
+          import json, re, sys
           version = sys.argv[1]
+          # .env.production -> VITE_APP_VERSION (versión que la app reporta y compara)
           p = ".env.production"
           s = open(p, encoding="utf-8").read()
           s2, n = re.subn(r'^VITE_APP_VERSION=.*$', f'VITE_APP_VERSION="{version}"', s, flags=re.M)
           if n == 0:
               s2 = s.rstrip("\n") + f'\nVITE_APP_VERSION="{version}"\n'
           open(p, "w", encoding="utf-8").write(s2)
-          print(f"VITE_APP_VERSION={version}")
+          # package.json -> version (mantiene coherencia con el tag)
+          pj = "package.json"
+          data = json.load(open(pj, encoding="utf-8"))
+          data["version"] = version
+          json.dump(data, open(pj, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
+          open(pj, "a", encoding="utf-8").write("\n")
+          print(f"VITE_APP_VERSION={version} package.json={version}")
           PY
 
       - name: Build web produccion
         run: npm run build -- --mode production
+
+      - name: Verificar estilos empaquetados
+        # Si falta el theme Falcon, FontAwesome o el index, el APK saldría
+        # sin estilos: se falla aquí en vez de publicar un APK roto.
+        run: |
+          test -f dist/index.html || (echo "FALTA dist/index.html" && exit 1)
+          test -f dist/assets/css/theme.min.css || (echo "FALTA dist/assets/css/theme.min.css" && exit 1)
+          test -f dist/vendors/FontAwesome-pro/css/all.min.css || (echo "FALTA dist/vendors FontAwesome" && exit 1)
+          test -f dist/assets/js/config.js || (echo "FALTA dist/assets/js/config.js" && exit 1)
+          ls -lh dist/index.html dist/assets/css/theme.min.css dist/vendors/FontAwesome-pro/css/all.min.css
+          echo "--- referencias en dist/index.html ---"
+          grep -o 'href="[^"]*theme.min.css"' dist/index.html
+          grep -o 'href="[^"]*all.min.css"' dist/index.html
 
       - name: Sync Capacitor Android
         run: npx cap sync android

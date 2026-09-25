@@ -65,6 +65,17 @@ export const useVersionUpdateStore = defineStore("versionUpdate", {
             this.isChecking = true;
             try {
                 const result = await checkForUpdate();
+                if (!result.latestVersion && cached && cached.hasUpdate) {
+                    // Sin red o GitHub inaccesible al abrir: se conserva el
+                    // aviso cacheado para que la alerta salga de una vez.
+                    this.hasUpdate = true;
+                    this.latestVersion = cached.latestVersion || null;
+                    this.currentVersion = result.currentVersion;
+                    this.apkUrl = cached.apkUrl || null;
+                    this.releaseUrl = cached.releaseUrl || "";
+                    this.lastCheck = cached.timestamp;
+                    return;
+                }
                 this.hasUpdate = result.hasUpdate;
                 this.latestVersion = result.latestVersion;
                 this.currentVersion = result.currentVersion;

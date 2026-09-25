@@ -9,6 +9,7 @@ import NavProgressBar from '@/components/NavProgressBar.vue';
 import { useAuthStore } from '@/store/modules/auth.js';
 import { useVersionUpdateStore } from '@/features/versionUpdate/store/versionUpdate.store.js';
 import VersionUpdateBanner from '@/components/VersionUpdateBanner.vue';
+import VersionUpdateModal from '@/components/VersionUpdateModal.vue';
 
 const route = useRoute();
 const notificationsStore = useNotificationsStore();
@@ -30,8 +31,10 @@ const layoutComponent = computed(() => {
 
 onMounted(() => {
   notificationsStore.startExpiryAlertInterval();
-  // Check de nueva versión: asíncrono, silencioso, con throttle de 6h en el store.
-  versionUpdateStore.check();
+  // Check de nueva versión al abrir: forzado (sin throttle) para avisar
+  // de una vez, incluso sin iniciar sesión. Si falla la red, el store
+  // reutiliza el último aviso cacheado. Silencioso si no hay update.
+  versionUpdateStore.check({ force: true });
 });
 
 onUnmounted(() => {
@@ -113,6 +116,10 @@ const getInitialsLabel = (type) => {
 
   <!-- Alerta de nueva versión (web y Android): no intrusiva, oculta en /login -->
   <VersionUpdateBanner v-if="showVersionBanner" />
+
+  <!-- Modal de nueva versión: se muestra en CUALQUIER ruta (incluido
+       /login) apenas se detecta update, sin necesidad de iniciar sesión -->
+  <VersionUpdateModal />
 
   <!-- Alertas temporales; el resumen vive junto a la campana en Navbar.vue -->
   <div class="expiry-notifications-hub">
