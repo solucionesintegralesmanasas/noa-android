@@ -2,14 +2,20 @@
   <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
   <DriverTrackingProvider />
   <Sidebar v-if="!shouldHideSidebar" />
-  <div class="content" :class="{ 'no-sidebar-content': shouldHideSidebar }">
+  <div class="content" :class="{ 'no-sidebar-content': shouldHideSidebar, 'has-conductor-nav': showConductorNav }">
     <Navbar :hide-sidebar-toggle="shouldHideSidebar" :show-brand="shouldHideSidebar" />
     <main id="main-content" tabindex="-1">
       <slot>
         <router-view />
       </slot>
     </main>
-    <Footer />
+    <Footer v-if="!showConductorNav" />
+    <ConductorBottomNav
+      v-if="showConductorNav"
+      :vehicles-count="conductorVehiclesCount"
+      :has-active-service="conductorHasService"
+      :gps-active="conductorGpsActive"
+    />
   </div>
 </template>
 
@@ -21,9 +27,14 @@ import Navbar from '@/components/layout/Navbar.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import Footer from '@/components/layout/Footer.vue'
 import DriverTrackingProvider from '@/features/tracking/components/DriverTrackingProvider.vue'
+import ConductorBottomNav from '@/features/dashboard/components/ConductorBottomNav.vue'
+import { useDashboardStore } from '@/features/dashboard/store/dashboard.store'
+import { useDriverTrackingStore } from '@/features/tracking/store/driverTracking.store'
 
 const route = useRoute()
 const permissionsStore = usePermissionsStore()
+const dashboardStore = useDashboardStore()
+const driverTrackingStore = useDriverTrackingStore()
 
 const isConductorRole = computed(() => {
   return permissionsStore.hasRole('CONDUCTOR')
@@ -39,6 +50,11 @@ const isConductorDashboard = computed(() => {
 const shouldHideSidebar = computed(() => {
   return Boolean(route.meta?.hideSidebar) || isConductorDashboard.value
 })
+
+const showConductorNav = computed(() => isConductorDashboard.value)
+const conductorVehiclesCount = computed(() => dashboardStore.conductorVehicles?.length ?? dashboardStore.conductorData?.vehicles?.length ?? 0)
+const conductorHasService = computed(() => Boolean(dashboardStore.conductorData?.active_service))
+const conductorGpsActive = computed(() => Boolean(driverTrackingStore?.isTracking))
 
 onMounted(() => {
   var isFluid = true
@@ -112,6 +128,10 @@ onMounted(() => {
   max-width: 100% !important;
   padding-left: 1rem !important;
   padding-right: 1rem !important;
+}
+/* Espacio para la BottomNav del conductor + safe-area Android */
+.has-conductor-nav #main-content {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 768px) {
