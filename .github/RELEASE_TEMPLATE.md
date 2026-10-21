@@ -1,26 +1,24 @@
-## NOA v1.2.4 — Combustible, solicitudes de tanqueo y alertas
+## NOA v1.2.5 — Conexión unificada al servidor
 
 App de Transportes Sin Barreras para Android (Vue + Capacitor).
 
 ### Incluye
 
-- **Control de Combustible y Kilometraje**: registro de surtimientos con galones, rendimiento (km/gal), costo por km y saldos de tanque. Los galones y el alcance estimado se calculan automáticamente y el formulario explica de dónde sale cada valor.
-- **Estado de combustible por vehículo**: kilómetros recorridos desde el último tanqueo, alcance estimado y kilómetros restantes, con clasificación (OK, próximo, excedido, sin datos o sin tanqueo), resumen y filtros por estado y proyecto.
-- **Solicitudes de tanqueo**: el conductor solicita el surtimiento para su vehículo, la empresa aprueba o rechaza con motivo y la app muestra el **QR aprobado** para la estación de servicio, incluido un QR con los datos para consultar sin internet. La solicitud vence a las 24 horas y puede anularse.
-- **Inicio del conductor**: nueva tarjeta de acceso directo a "Solicitudes de tanqueo" en la vista móvil y de escritorio.
-- **Alertas de combustible**: las notificaciones avisan cuando el vehículo agota el alcance estimado o entra en la reserva.
-- **Terceros**: selección y visualización de la sucursal del tercero.
-- **Menú de flota**: acceso a Combustible para los usuarios con permiso de consulta.
+- **API unificada**: la app nativa, la versión web y los recursos de media apuntan ahora a `https://apinoa.transportessinbarreras.com/api/v1/`. Se retiran las referencias al dominio anterior `api.transportessinbarreras.com` y al host histórico `apinoatransportes.solucionesintegralesmana.com`.
+- **Variables de entorno actualizadas**: `VITE_API_BASE_URL`, `VITE_API_NATIVE_URL` y `VITE_API_PROXY_TARGET` usan el mismo servidor; el valor por defecto de `API_NATIVE_URL` en `src/utils/env.js` también queda alineado.
+- **Recursos y PDF**: la resolución de media y los enlaces de archivos usan la nueva base, sin mezclar dominios.
+- **Assets de Android regenerados** con la configuración nueva (`cap sync`).
+- Se mantienen las funciones publicadas en v1.2.4: control de combustible, estado por vehículo, solicitudes de tanqueo con QR, alertas y sucursal del tercero.
 
 ### Requisitos
 
 - Android 7.0 o superior.
-- Conexión al servidor `https://api.transportessinbarreras.com/api/v1/`.
+- Conexión al servidor `https://apinoa.transportessinbarreras.com/api/v1/`.
 - Permisos: ubicación (incluida en segundo plano), notificaciones, ejecución en segundo plano e instalación de paquetes.
 
 ### Instalación
 
-1. Descargar `NOA-v1.2.4.apk` desde este Release.
+1. Descargar `NOA-v1.2.5.apk` desde este Release.
 2. Permitir "instalar apps desconocidas" cuando Android lo pida.
 3. Abrir NOA e iniciar sesión con tu usuario.
 
@@ -32,5 +30,5 @@ App de Transportes Sin Barreras para Android (Vue + Capacitor).
 
 ### Verificación técnica
 
-- `applicationId com.transportessinbarreras.noa`, `versionName 1.2.4`, `versionCode 12` (build.gradle 11 + 1), APK firmado release.
-- Servidor API configurado para el entorno de producción.
+- `applicationId com.transportessinbarreras.noa`, `versionName 1.2.5`, `versionCode 13` (build.gradle 12 + 1), APK firmado release.
+- Servidor API configurado en `https://apinoa.transportessinbarreras.com/api/v1/`.
