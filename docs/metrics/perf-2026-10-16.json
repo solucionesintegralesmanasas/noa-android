@@ -1,0 +1,73 @@
+{
+  "fecha": "2026-10-16",
+  "dist": true,
+  "metricas": {
+    "totalJS": 2858.9,
+    "totalCSS": 288.2,
+    "vendorPrimevue": 806.3,
+    "vendorUI": null,
+    "vendorFeedback": 76.3,
+    "vendorHttp": 40.1,
+    "vendorVue": 102.4,
+    "indexJS": 141.1,
+    "numChunksJS": 160,
+    "numChunksCSS": 87
+  },
+  "html": {
+    "scriptsSinDefer": [],
+    "hojasGoogleFonts": 1,
+    "cssMuertoJqueryToast": 0
+  },
+  "topChunks": [
+    {
+      "archivo": "vendor-primevue-DMgqhVpa.js",
+      "kb": 806.3,
+      "tipo": "js"
+    },
+    {
+      "archivo": "html2canvas-B9Ed0YNC.js",
+      "kb": 194.9,
+      "tipo": "js"
+    },
+    {
+      "archivo": "index-zjfBJhaK.js",
+      "kb": 141.1,
+      "tipo": "js"
+    },
+    {
+      "archivo": "vendor-vue-hePDsU2y.js",
+      "kb": 102.4,
+      "tipo": "js"
+    },
+    {
+      "archivo": "ServiceTemplateView-rr47bv59.js",
+      "kb": 95.5,
+      "tipo": "js"
+    },
+    {
+      "archivo": "vendor-feedback-p_XCIix1.js",
+      "kb": 76.3,
+      "tipo": "js"
+    },
+    {
+      "archivo": "DashboardView-ByL6Ye3G.js",
+      "kb": 56.1,
+      "tipo": "js"
+    },
+    {
+      "archivo": "SystemConfigurationView-OaF8Lkzk.js",
+      "kb": 54.3,
+      "tipo": "js"
+    },
+    {
+      "archivo": "FuecFormView-YhVbTOmj.js",
+      "kb": 50.7,
+      "tipo": "js"
+    },
+    {
+      "archivo": "vendor-http-Cum7x4mu.js",
+      "kb": 40.1,
+      "tipo": "js"
+    }
+  ]
+}
