@@ -150,6 +150,17 @@
             <i class="fas fa-chevron-right mr-chevron" aria-hidden="true"></i>
           </router-link>
         </li>
+        <li>
+          <router-link class="module-row" to="/solicitudes-tanqueo">
+            <span class="mr-icon is-blue" aria-hidden="true"><i class="fas fa-gas-pump" aria-hidden="true"></i></span>
+            <span class="mr-texts">
+              <span class="mr-title">Solicitudes de tanqueo</span>
+              <span class="mr-desc">Solicita combustible y muestra el QR aprobado</span>
+            </span>
+            <span class="mr-badge">QR</span>
+            <i class="fas fa-chevron-right mr-chevron" aria-hidden="true"></i>
+          </router-link>
+        </li>
       </ul>
     </div>
 
