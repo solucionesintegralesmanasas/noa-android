@@ -55,7 +55,7 @@
                         <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
-                                    <th v-for="w in ['30%', '20%', '20%', '15%', '15%']" :key="w"
+                                    <th v-for="w in ['28%', '18%', '18%', '14%', '12%', '10%']" :key="w"
                                         style="padding:12px 8px">
                                         <div class="skeleton-text" :style="`height:16px;width:${w}`" />
                                     </th>
@@ -63,7 +63,7 @@
                             </thead>
                             <tbody>
                                 <tr v-for="n in store.pagination.itemsPerPage" :key="`sk-${n}`">
-                                    <td v-for="i in 4" :key="i">
+                                    <td v-for="i in 5" :key="i">
                                         <div class="skeleton-text" style="height:18px;width:75%;" />
                                     </td>
                                     <td>
@@ -107,6 +107,12 @@
                             <Column field="email" header="Email" sortable>
                                 <template #body="{ data }">
                                     <span class="text-dark">{{ data.email || '-' }}</span>
+                                </template>
+                            </Column>
+
+                            <Column field="branch.name" header="Sucursal" sortable>
+                                <template #body="{ data }">
+                                    <span class="text-dark">{{ data.branch?.name || '—' }}</span>
                                 </template>
                             </Column>
 

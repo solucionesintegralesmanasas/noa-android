@@ -99,11 +99,12 @@ class ThirdPartiesService extends BaseService {
         };
         const { companyUuid } = this._getUserContext();
 
-        const [companies, documentTypes, cities, taxResponsibilities, affiliate, roles] = await Promise.all([
+        const [companies, documentTypes, cities, taxResponsibilities, branches, affiliate, roles] = await Promise.all([
             fetchSafe(`administration/companies/list?companyUuid=${companyUuid || ''}`),
             fetchSafe('catalogs/type-of-documents/list'),
             fetchSafe('catalogs/cities/list'),
             fetchSafe('catalogs/tax-responsibilities/list'),
+            fetchSafe(`administration/branches/list?company_uuid=${companyUuid || ''}`),
             fetchSafe(`third-parties/list?type=is_affiliate&companyUuid=${companyUuid || ''}`),
             fetchSafe('auth/roles/list'),
         ]);
@@ -113,9 +114,20 @@ class ThirdPartiesService extends BaseService {
             documentTypes,
             cities,
             taxResponsibilities,
+            branches,
             affiliate,
             roles,
         };
+    }
+
+    /**
+     * Obtiene las sucursales de una empresa para el formulario.
+     * @param {string} companyUuid - UUID de la empresa.
+     * @returns {Promise<Array>} Sucursales de la empresa.
+     */
+    async getBranches(companyUuid = '') {
+        const res = await this._getInstance().get(`administration/branches/list?company_uuid=${companyUuid || ''}`);
+        return res.data?.data ?? res.data ?? [];
     }
 
     /**

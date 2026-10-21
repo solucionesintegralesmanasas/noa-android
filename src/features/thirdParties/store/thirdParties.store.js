@@ -73,6 +73,22 @@ export const useThirdPartiesStore = defineStore('thirdParties', {
         loadFormOptions() { return this.loadCatalogs(); },
 
         /**
+         * Carga las sucursales de una empresa (para SUPERADMIN al cambiar de empresa).
+         * @param {string} companyUuid - UUID de la empresa.
+         * @returns {Promise<Array>}
+         */
+        async loadBranches(companyUuid = '') {
+            try {
+                const branches = await thirdPartiesService.getBranches(companyUuid);
+                this.catalogs.branches = Array.isArray(branches) ? branches : [];
+                return this.catalogs.branches;
+            } catch (error) {
+                this.catalogs.branches = [];
+                throw error;
+            }
+        },
+
+        /**
          * Actualiza localmente un item en la lista.
          * @param {string} uuid - UUID del item.
          * @param {Object} patch - Datos parciales a actualizar.

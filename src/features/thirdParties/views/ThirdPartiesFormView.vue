@@ -180,6 +180,20 @@
                             </div>
                         </div>
 
+                        <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                            <label class="form-label required" for="branch_uuid">Sucursal</label>
+                            <PrimeSelect :input-id="'branch_uuid'" v-model="formData.branch_uuid"
+                                :options="branchOptions" option-value="uuid" option-label="name"
+                                placeholder="Seleccione..." showClear filter class="w-100"
+                                :invalid="!!validationErrors['branch_uuid']" />
+                            <div v-if="validationErrors.branch_uuid" class="invalid-feedback d-block" id="f-branch_uuid-error" role="alert">
+                                {{ validationErrors.branch_uuid }}
+                            </div>
+                            <div v-if="sucursalesCargadas && branchOptions.length === 0" class="form-text text-danger" role="status">
+                                No hay sedes configuradas para esta empresa.
+                            </div>
+                        </div>
+
                         <!-- DATOS BANCARIOS -->
                         <div class="col-12">
                             <h6 class="text-uppercase fw-bold text-secondary mb-3 mt-2 border-bottom pb-2">
@@ -444,6 +458,7 @@ import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useThirdPartiesStore } from '../store/thirdParties.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
+import { logger } from '@/utils/logger.js';
 import Swal from 'sweetalert2';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import PrimeSelect from 'primevue/select';
@@ -479,6 +494,8 @@ const routeType = computed(() => {
 const isViewLoading = ref(true);
 const submitting = ref(false);
 const validationErrors = reactive({});
+// Evita mostrar "no hay sedes" mientras el catálogo aún está cargando.
+const sucursalesCargadas = ref(false);
 
 // Estado inicial del formulario (inicializar campos del JSON de la Tarea 1)
 const formData = reactive({
@@ -504,6 +521,7 @@ const formData = reactive({
     phone: '',
     address: '',
     municipality_uuid: '',
+    branch_uuid: '',
     bank_account_number: '',
     bank_account_type: '',
     bank_name: '',
@@ -560,6 +578,27 @@ const bottomRowColClass = computed(() => {
     return isSuperAdmin.value
         ? 'col-12 col-sm-6 col-md-3 col-lg-3'
         : 'col-12 col-sm-6 col-md-4 col-lg-4';
+});
+
+// Sucursales de la empresa seleccionada: para SUPERADMIN cambian con la empresa.
+const branchOptions = computed(() => {
+    const branches = store.catalogs.branches ?? [];
+    if (!formData.company_uuid) return branches;
+    return branches.filter(branch => branch.company_uuid === formData.company_uuid);
+});
+
+// Al cambiar de empresa, recargar sus sucursales y limpiar una selección ajena.
+watch(() => formData.company_uuid, async (nuevo, anterior) => {
+    if (!isSuperAdmin.value || !nuevo || nuevo === anterior) return;
+    try {
+        await store.loadBranches(nuevo);
+    } catch (error) {
+        logger.warn('[terceros] no se pudieron cargar las sucursales de la empresa', error);
+    }
+    sucursalesCargadas.value = true;
+    if (formData.branch_uuid && !store.catalogs.branches.some(branch => branch.uuid === formData.branch_uuid)) {
+        formData.branch_uuid = '';
+    }
 });
 
 // Forzar regla: si se marca Empleado, solo puede quedar un tipo y un rol (cualquiera)
@@ -644,6 +683,7 @@ const validateForm = () => {
     if (isEmpty(formData.email)) validationErrors.email = 'Este campo es obligatorio';
     else if (!EMAIL_RE.test(String(formData.email))) validationErrors.email = 'El correo electrónico no tiene un formato válido';
     if (isEmpty(formData.municipality_uuid)) validationErrors.municipality_uuid = 'Este campo es obligatorio';
+    if (isEmpty(formData.branch_uuid)) validationErrors.branch_uuid = 'Este campo es obligatorio';
     if (isEmpty(formData.tax_regime)) validationErrors.tax_regime = 'Este campo es obligatorio';
     if (isEmpty(formData.tax_responsibility_uuid)) validationErrors.tax_responsibility_uuid = 'Este campo es obligatorio';
     if (isEmpty(formData.is_active)) validationErrors.is_active = 'Este campo es obligatorio';
@@ -813,15 +853,26 @@ const handleSubmit = async () => {
 onMounted(async () => {
     isViewLoading.value = true;
     try {
-        await store.loadFormOptions();
         if (!isSuperAdmin.value) {
             formData.company_uuid = userStore.company_uuid;
         }
+        await store.loadFormOptions();
+        if (!store.catalogs.branches?.length) {
+            try {
+                await store.loadBranches(formData.company_uuid);
+            } catch (error) {
+                logger.warn('[terceros] no se pudieron cargar las sucursales', error);
+            }
+        }
+        sucursalesCargadas.value = true;
 
         if (isEditMode.value) {
             const item = await store.fetchProfileById(route.params.id);
             if (item) {
                 Object.assign(formData, item);
+                if (!formData.branch_uuid && item.branch?.uuid) {
+                    formData.branch_uuid = item.branch.uuid;
+                }
 
                 // Tipo de tercero: reconstruir los flags activos para el selector.
                 const partyTypes = [];

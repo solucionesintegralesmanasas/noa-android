@@ -55,7 +55,10 @@
                         <dd class="col-7 text-dark fw-semibold">{{ item.phone || '—' }}</dd>
 
                         <dt class="col-5 text-muted fw-medium">Dirección:</dt>
-                        <dd class="col-7 text-dark fw-semibold">{{ item.address || '—' }}</dd>
+                        <dd class="col-7 text-dark fw-semibold">{{ item.address || '-' }}</dd>
+
+                        <dt class="col-5 text-muted fw-medium">Sucursal:</dt>
+                        <dd class="col-7 text-dark fw-semibold">{{ item.branch?.name || '—' }}</dd>
 
                         <dt class="col-5 text-muted fw-medium">Régimen Tributario:</dt>
                         <dd class="col-7 text-dark fw-semibold">{{ item.tax_regime || '—' }}</dd>
