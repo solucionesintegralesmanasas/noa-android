@@ -300,6 +300,7 @@ const getAvatarClass = (type) => {
         case 'AGREEMENT': return 'bg-subtle-primary text-primary'
         case 'AFFILIATE_CHARGE': return 'bg-subtle-success text-success'
         case 'VEHICLE_INSPECTION_PENDING': return 'bg-subtle-danger text-danger'
+        case 'VEHICLE_FUEL_ALERT': return 'bg-subtle-warning text-warning'
         case 'SOCIAL_SECURITY_MORA': return 'bg-subtle-danger text-danger'
         default: return 'bg-subtle-secondary text-secondary'
     }
@@ -314,6 +315,7 @@ const getInitialsLabel = (type) => {
         case 'AGREEMENT': return 'CO'
         case 'AFFILIATE_CHARGE': return 'CA'
         case 'VEHICLE_INSPECTION_PENDING': return 'IP'
+        case 'VEHICLE_FUEL_ALERT': return 'CB'
         case 'SOCIAL_SECURITY_MORA': return 'SS'
         default: return 'AL'
     }

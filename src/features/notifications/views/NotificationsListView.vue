@@ -49,6 +49,7 @@
                             <option value="AFFILIATE_CHARGE">Cobros de Administración</option>
                             <option value="VEHICLE_INSPECTION_PENDING">Inspección de Vehículo Pendiente</option>
                             <option value="VEHICLE_MAINTENANCE_ALERT">Mantenimiento Preventivo</option>
+                            <option value="VEHICLE_FUEL_ALERT">Combustible</option>
                             <option value="SOCIAL_SECURITY_MORA">Seguridad Social</option>
                         </select>
                         <label class="visually-hidden" for="f-priority">Filtrar por prioridad</label>
@@ -145,6 +146,14 @@
                                     </span>
                                     <span v-else class="badge badge-subtle badge-subtle-warning">
                                         <i class="fad fa-history me-1" /> Vence en {{ data.days_left }} km
+                                    </span>
+                                </template>
+                                <template v-else-if="data.type === 'VEHICLE_FUEL_ALERT'">
+                                    <span v-if="data.days_left < 0" class="badge badge-subtle badge-subtle-danger">
+                                        <i class="fad fa-gas-pump me-1" /> Excedido por {{ Math.abs(data.days_left) }} km
+                                    </span>
+                                    <span v-else class="badge badge-subtle badge-subtle-warning">
+                                        <i class="fad fa-gas-pump me-1" /> Restan {{ data.days_left }} km
                                     </span>
                                 </template>
                                 <template v-else>
@@ -266,6 +275,7 @@ const getTypeIcon = (type) => {
         case 'AFFILIATE_CHARGE': return 'fad fa-file-invoice-dollar text-success';
         case 'VEHICLE_INSPECTION_PENDING': return 'fad fa-clipboard-check text-danger';
         case 'VEHICLE_MAINTENANCE_ALERT': return 'fad fa-tools text-warning';
+        case 'VEHICLE_FUEL_ALERT': return 'fad fa-gas-pump text-warning';
         case 'SOCIAL_SECURITY_MORA': return 'fad fa-shield-alt text-danger';
         default: return 'fad fa-bell text-secondary';
     }
@@ -281,6 +291,7 @@ const getTypeLabel = (type) => {
         case 'AFFILIATE_CHARGE': return 'Cuota Adm.';
         case 'VEHICLE_INSPECTION_PENDING': return 'Inspección Pend.';
         case 'VEHICLE_MAINTENANCE_ALERT': return 'Mantenimiento Prev.';
+        case 'VEHICLE_FUEL_ALERT': return 'Combustible';
         case 'SOCIAL_SECURITY_MORA': return 'Seguridad Social';
         default: return 'Alerta';
     }
