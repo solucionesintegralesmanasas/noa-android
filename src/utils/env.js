@@ -18,9 +18,9 @@ const bool = (key, fallback) => envVars[`VITE_${key}`] === "true";
 export const env = Object.freeze({
     NODE_ENV: envVars.MODE || "development",
     APP_NAME: optional("APP_NAME", "NOA Transportes"),
-    APP_VERSION: optional("APP_VERSION", "1.1.7"),
+    APP_VERSION: optional("APP_VERSION", "1.2.4"),
     API_BASE_URL: required("API_BASE_URL"),
-    API_NATIVE_URL: optional("API_NATIVE_URL", "https://api.transportessinbarreras.com/api/v1/"),
+    API_NATIVE_URL: optional("API_NATIVE_URL", "https://apinoa.transportessinbarreras.com/api/v1/"),
     API_TIMEOUT: num("API_TIMEOUT", 30000),
     AUTH_TOKEN_KEY: optional("AUTH_TOKEN_KEY", "auth_token"),
     ENCRYPTION_KEY: optional("ENCRYPTION_KEY", "secreto_seguro"),
