@@ -28,6 +28,7 @@ import { vehicleInspectionsRoutes } from "@features/vehicleInspections/routes.js
 import { vehicleDocumentsRoutes } from "@features/vehicleDocuments/routes.js";
 import { operationCardsRoutes } from "@features/operationCards/routes.js";
 import { maintenanceRoutes } from "@features/maintenance/routes.js";
+import { fuelManagementRoutes } from "@features/fuelManagement/routes.js";
 import { businessCollaborationAgreementsRoutes } from "@features/businessCollaborationAgreements/routes.js";
 import { fuecRoutes } from "@features/fuec/routes.js";
 import { affiliateAdminChargesRoutes } from "@features/affiliateAdminCharges/routes.js";
@@ -35,6 +36,7 @@ import { notificationsRoutes } from "@features/notifications/routes.js";
 import { systemConfigurationRoutes } from "@features/systemConfiguration/routes.js";
 import { serviceDeliveryControlSheetRoutes } from "@features/serviceDeliveryControlSheet/routes.js";
 import { controlSheetsRoutes } from "@features/controlSheets/routes.js";
+import { fuelRequestsRoutes } from "@features/fuelRequests/routes.js";
 import { assistantRoutes } from "@features/assistant/routes.js";
 import { employmentContractsRoutes } from "@features/humanResources/routes.js";
 import { projectsRoutes } from "@features/projects/routes.js";
@@ -90,6 +92,7 @@ const routes = [
     ...vehicleDocumentsRoutes,
     ...operationCardsRoutes,
     ...maintenanceRoutes,
+    ...fuelManagementRoutes,
     ...businessCollaborationAgreementsRoutes,
     ...fuecRoutes,
     ...affiliateAdminChargesRoutes,
@@ -97,6 +100,7 @@ const routes = [
     ...systemConfigurationRoutes,
     ...serviceDeliveryControlSheetRoutes,
     ...controlSheetsRoutes,
+    ...fuelRequestsRoutes,
     ...assistantRoutes,
     ...employmentContractsRoutes,
     ...projectsRoutes,

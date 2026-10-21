@@ -111,7 +111,7 @@ El repo sigue patrones intencionales. Un código nuevo debe encajar en ellos, no
 - **Casos negativos obligatorios:** fallo de red, respuesta vacía, error sin mensaje, aviso que también falla, permiso denegado, estado sin datos.
 - **Forma de la respuesta:** al probar listados, armar la respuesta con la misma forma que devuelve `BaseService` (`{ success, message, data }`; un listado paginado está en `r.data.data`). Una prueba con otra forma pasa en verde con la pantalla vacía.
 - **Componentes Vue:** hoy no hay entorno DOM. Antes de la primera prueba de componente, añadir `jsdom` y `@vue/test-utils` en un PR propio y declarar `// @vitest-environment jsdom` en la primera línea de cada archivo.
-- **Estado actual:** 96 pruebas en 9 archivos (`npm run test:unit`, 2026-10-15).
+- **Estado actual:** 113 pruebas en 10 archivos (`npm run test:unit`, 2026-10-21).
 
 ## Medición de Rendimiento y Accesibilidad
 

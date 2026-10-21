@@ -249,7 +249,7 @@
                     <!-- (era "Flota" — sin Planillas de Control)           -->
                     <!-- ═══════════════════════════════════════════════════ -->
                     <li class="nav-item"
-                        v-if="can('vehicles.index') || can('vehicle_inspections.index') || can('maintenance.index') || can('maintenance.forecast')">
+                        v-if="can('vehicles.index') || can('vehicle_inspections.index') || can('maintenance.index') || can('maintenance.forecast') || can('fuel_logs.index')">
                         <div class="row navbar-vertical-label-wrapper mt-3 mb-2">
                             <div class="col-auto navbar-vertical-label">Flota y Mantenimiento</div>
                             <div class="col ps-0">
@@ -278,6 +278,14 @@
                             <div class="d-flex align-items-center">
                                 <span class="nav-link-icon"><span class="fas fa-toolbox"></span></span>
                                 <span class="nav-link-text ps-1">Mantenimientos</span>
+                            </div>
+                        </router-link>
+
+                        <router-link class="nav-link" :class="{ 'active': isActiveLink('/combustible', true) }"
+                            to="/combustible" v-if="can('fuel_logs.index')">
+                            <div class="d-flex align-items-center">
+                                <span class="nav-link-icon"><span class="fas fa-gas-pump"></span></span>
+                                <span class="nav-link-text ps-1">Combustible</span>
                             </div>
                         </router-link>
 
