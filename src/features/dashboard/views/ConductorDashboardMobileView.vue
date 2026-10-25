@@ -150,7 +150,7 @@
             <i class="fas fa-chevron-right mr-chevron" aria-hidden="true"></i>
           </router-link>
         </li>
-        <li>
+        <li v-if="permissionsStore.can('fuel_requests.index')">
           <router-link class="module-row" to="/solicitudes-tanqueo">
             <span class="mr-icon is-blue" aria-hidden="true"><i class="fas fa-gas-pump" aria-hidden="true"></i></span>
             <span class="mr-texts">

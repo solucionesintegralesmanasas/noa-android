@@ -20,13 +20,11 @@ class FuelRequestsService extends BaseService {
     cancel(uuid) { return this._request('POST', `/${uuid}/cancel`); }
     qr(uuid) { return this._request('GET', `/${uuid}/qr`); }
 
+    /** Lista los vehículos del conductor. Propaga el error: la vista debe mostrarlo, no ocultarlo. */
     async getVehiculos() {
-        try {
-            const response = await this._getInstance().get('fleet-management/vehicles/list');
-            return response.data?.data ?? response.data ?? [];
-        } catch {
-            return [];
-        }
+        const response = await this._getInstance().get('fleet-management/vehicles/list');
+        const cuerpo = response.data?.data ?? response.data;
+        return Array.isArray(cuerpo) ? cuerpo : [];
     }
 }
 

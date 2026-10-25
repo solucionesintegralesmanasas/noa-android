@@ -273,7 +273,7 @@
                 </div>
 
                 <!-- 5. Solicitudes de Tanqueo -->
-                <div class="col-12 col-sm-6 col-xl-3">
+                <div v-if="permissionsStore.can('fuel_requests.index')" class="col-12 col-sm-6 col-xl-3">
                     <div class="card h-100 border-0 shadow-sm module-card card-action-blue">
                         <div class="card-body p-3 p-lg-4 d-flex flex-column justify-content-between">
                             <div>
@@ -578,7 +578,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useAuthStore, useUserStore } from '@store';
+import { useAuthStore, usePermissionsStore, useUserStore } from '@store';
 import { useDashboardStore } from '../store/dashboard.store';
 import DriverSelfMap from '@/features/tracking/components/DriverSelfMap.vue';
 import { primerNombre, iniciales, saludoPorHora, filtrarVehiculos, formatearNumero, formatearPlaca } from '../utils/presentacionConductor.js';
@@ -586,6 +586,7 @@ import { primerNombre, iniciales, saludoPorHora, filtrarVehiculos, formatearNume
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const dashboardStore = useDashboardStore();
+const permissionsStore = usePermissionsStore();
 
 const selectedPeriod = ref('30');
 const vehicleSearch = ref('');

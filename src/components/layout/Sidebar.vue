@@ -289,6 +289,14 @@
                             </div>
                         </router-link>
 
+                        <router-link class="nav-link" :class="{ 'active': isActiveLink('/solicitudes-tanqueo') }"
+                            to="/solicitudes-tanqueo" v-if="can('fuel_requests.index')">
+                            <div class="d-flex align-items-center">
+                                <span class="nav-link-icon"><span class="fas fa-qrcode"></span></span>
+                                <span class="nav-link-text ps-1">Solicitudes de tanqueo</span>
+                            </div>
+                        </router-link>
+
                         <router-link class="nav-link" :class="{ 'active': isActiveLink('/mantenimiento/proyeccion', true) }"
                             to="/mantenimiento/proyeccion" v-if="can('maintenance.forecast')">
                             <div class="d-flex align-items-center">
