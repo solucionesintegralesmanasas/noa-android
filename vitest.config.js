@@ -16,6 +16,6 @@ export default defineConfig({
         environment: 'node',
         include: ['src/**/*.test.js'],
         // env.js exige VITE_API_BASE_URL al importarse.
-        env: { VITE_API_BASE_URL: 'http://api.test/api/v1/', VITE_APP_VERSION: '1.2.6' },
+        env: { VITE_API_BASE_URL: 'http://api.test/api/v1/', VITE_APP_VERSION: '1.2.7' },
     },
 });
