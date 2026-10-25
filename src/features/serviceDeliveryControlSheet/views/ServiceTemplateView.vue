@@ -515,6 +515,7 @@
                                         <span v-if="driverTracking.isTracking">
                                             GPS activo · {{ driverTracking.speed }} km/h · {{ driverTracking.isMoving ? 'En ruta' : 'Detenido' }}
                                         </span>
+                                        <span v-else-if="driverTracking.locationEnabled === false">Ubicación del teléfono desactivada: actívala para registrar la ruta</span>
                                         <span v-else>GPS iniciando… acepta el permiso para registrar la ruta</span>
                                     </div>
                                     <div class="d-flex align-items-center gap-2 fs-11 text-muted">
@@ -524,10 +525,10 @@
                                         <span v-if="gpsUltimoEnvio !== '—'" title="Último punto guardado en el servidor">
                                             <i class="fas fa-cloud-upload-alt me-1"></i>{{ gpsUltimoEnvio }}
                                         </span>
-                                        <button v-if="!driverTracking.isTracking || driverTracking.permissionState === 'denied'"
+                                        <button v-if="!driverTracking.isTracking || driverTracking.permissionState === 'denied' || driverTracking.locationEnabled === false"
                                             class="btn btn-sm btn-primary rounded-pill px-3 py-0.5 fw-semibold"
-                                            type="button" @click="activarGpsOperativo">
-                                            <i class="fas fa-location-arrow me-1"></i>Activar ubicación
+                                            type="button" @click="driverTracking.locationEnabled === false ? driverTracking.abrirAjustesUbicacion() : activarGpsOperativo()">
+                                            <i class="fas fa-location-arrow me-1"></i>{{ driverTracking.locationEnabled === false ? 'Abrir ajustes' : 'Activar ubicación' }}
                                         </button>
                                     </div>
                                 </div>

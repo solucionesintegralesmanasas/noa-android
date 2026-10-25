@@ -3,6 +3,7 @@ package com.transportessinbarreras.noa;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
@@ -17,7 +18,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 /**
  * Puente Capacitor -> TrackingForegroundService.
  * Métodos: start | updateContext | stop | getStatus |
- * requestBatteryExemption | isBatteryExempt | openAppSettings
+ * requestBatteryExemption | isBatteryExempt | openAppSettings |
+ * isLocationEnabled | openLocationSettings
  */
 @CapacitorPlugin(name = "NoaTracking")
 public class TrackingPlugin extends Plugin {
@@ -153,6 +155,50 @@ public class TrackingPlugin extends Plugin {
             call.resolve(ret);
         } catch (Exception e) {
             call.reject(e.getMessage());
+        }
+    }
+
+    /** Indica si la ubicación del sistema (GPS o red) está encendida. */
+    @PluginMethod
+    public void isLocationEnabled(PluginCall call) {
+        try {
+            LocationManager lm = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+            boolean enabled = false;
+            if (lm != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    enabled = lm.isLocationEnabled();
+                } else {
+                    enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                        || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+                }
+            }
+            JSObject ret = new JSObject();
+            ret.put("enabled", enabled);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("No se pudo leer el estado de la ubicación: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Abre la pantalla de ubicación del sistema. Android no permite encender
+     * el GPS por código: el conductor lo activa desde ese ajuste.
+     */
+    @PluginMethod
+    public void openLocationSettings(PluginCall call) {
+        try {
+            Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            if (getActivity() != null) {
+                getActivity().startActivity(i);
+            } else {
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(i);
+            }
+            JSObject ret = new JSObject();
+            ret.put("opened", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("No se pudieron abrir los ajustes de ubicación: " + e.getMessage());
         }
     }
 }

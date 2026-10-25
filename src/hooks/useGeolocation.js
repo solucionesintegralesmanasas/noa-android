@@ -2,8 +2,14 @@
 import { ref, onUnmounted } from 'vue';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
+import { esErrorServiciosDesactivados, MENSAJE_UBICACION_DESACTIVADA } from '@/utils/ubicacion.js';
 
 let leafletPromise = null;
+
+function mensajeDeErrorNativo(err, respaldo) {
+    if (esErrorServiciosDesactivados(err)) return MENSAJE_UBICACION_DESACTIVADA;
+    return err?.message || respaldo;
+}
 
 export function useGeolocation(options = {}) {
     const {
@@ -133,7 +139,7 @@ export function useGeolocation(options = {}) {
                     (position, err) => {
                         if (err) {
                             error.value = true;
-                            errorMsg.value = err.message || 'Error al obtener posición GPS.';
+                            errorMsg.value = mensajeDeErrorNativo(err, 'Error al obtener posición GPS.');
                             loading.value = false;
                             if (onErrorCallback) onErrorCallback(err);
                             return;
@@ -144,7 +150,7 @@ export function useGeolocation(options = {}) {
                 watchActive.value = true;
             } catch (err) {
                 error.value = true;
-                errorMsg.value = err.message || 'No se pudo iniciar el servicio de ubicación nativo.';
+                errorMsg.value = mensajeDeErrorNativo(err, 'No se pudo iniciar el servicio de ubicación nativo.');
                 loading.value = false;
                 if (onErrorCallback) onErrorCallback(err);
             }
@@ -258,7 +264,12 @@ export function useGeolocation(options = {}) {
         const isNative = Capacitor.isNativePlatform();
 
         if (isNative) {
-            const permResult = await Geolocation.requestPermissions();
+            let permResult;
+            try {
+                permResult = await Geolocation.requestPermissions();
+            } catch (err) {
+                throw new Error(mensajeDeErrorNativo(err, 'No se pudo solicitar el permiso de ubicación.'));
+            }
             if (permResult.location === 'denied') {
                 throw new Error('Permiso de ubicación denegado por el usuario.');
             }

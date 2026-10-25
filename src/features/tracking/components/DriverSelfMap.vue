@@ -113,6 +113,12 @@ async function requestLocationAccess() {
     }
 }
 
+async function abrirAjustesUbicacion() {
+    errorMsg.value = '';
+    const abierto = await driverTracking.abrirAjustesUbicacion();
+    if (!abierto) errorMsg.value = 'Activa la ubicación desde los ajustes del teléfono y vuelve a NOA.';
+}
+
 async function setupMap() {
     try {
         const L = await loadLeaflet();
@@ -235,9 +241,24 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-        <div v-if="!isTracking && (autoAttempted || !hasVehicles || driverTracking.permissionState === 'denied' || driverTracking.permissionState === 'unsupported')"
+        <div v-if="!isTracking && (autoAttempted || !hasVehicles || driverTracking.locationEnabled === false || driverTracking.permissionState === 'denied' || driverTracking.permissionState === 'unsupported')"
             class="px-3 pt-3">
-            <div v-if="!hasVehicles" class="alert alert-warning py-2 px-3 fs-11 mb-0 d-flex align-items-center gap-2">
+            <div v-if="driverTracking.locationEnabled === false" class="alert alert-warning py-2 px-3 fs-11 mb-0">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="fas fa-map-marker-alt-slash" aria-hidden="true"></i>
+                    <strong>La ubicación del teléfono está desactivada.</strong>
+                </div>
+                <div class="mb-2">Actívala en los ajustes del teléfono para registrar tu ruta. Al volver a NOA, el rastreo se reanuda solo.</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-sm btn-primary" type="button" @click="abrirAjustesUbicacion">
+                        <i class="fas fa-cog me-1" aria-hidden="true"></i>Abrir ajustes de ubicación
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" @click="requestLocationAccess">
+                        <i class="fas fa-redo me-1" aria-hidden="true"></i>Ya la activé
+                    </button>
+                </div>
+            </div>
+            <div v-else-if="!hasVehicles" class="alert alert-warning py-2 px-3 fs-11 mb-0 d-flex align-items-center gap-2">
                 <i class="fas fa-car-crash"></i>
                 <span>No tienes vehículos asignados: el rastreo GPS no puede iniciar. Contacta a tu empresa.</span>
             </div>

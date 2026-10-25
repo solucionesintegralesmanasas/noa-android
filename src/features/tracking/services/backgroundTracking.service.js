@@ -104,6 +104,27 @@ const backgroundTracking = {
             await plugin.openAppSettings();
         } catch { /* nada */ }
     },
+
+    /** true/false según el sistema; null si el puente nativo no está disponible. */
+    async isLocationEnabled() {
+        if (!this.available) return null;
+        try {
+            const r = await plugin.isLocationEnabled();
+            return r?.enabled === true;
+        } catch {
+            return null;
+        }
+    },
+
+    async openLocationSettings() {
+        if (!this.available) return false;
+        try {
+            const r = await plugin.openLocationSettings();
+            return r?.opened !== false;
+        } catch {
+            return false;
+        }
+    },
 };
 
 export default backgroundTracking;

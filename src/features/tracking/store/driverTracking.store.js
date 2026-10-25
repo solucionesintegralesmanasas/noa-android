@@ -4,6 +4,11 @@ import { Geolocation } from '@capacitor/geolocation';
 import trackingService from '../services/tracking.service';
 import backgroundTracking from '../services/backgroundTracking.service';
 import { useUserStore } from '@store';
+import {
+    esErrorServiciosDesactivados,
+    MENSAJE_UBICACION_DESACTIVADA,
+    MENSAJE_PERMISO_DENEGADO,
+} from '@utils/ubicacion.js';
 
 /**
  * DriverTrackingStore — rastreo GPS global y persistente del conductor.
@@ -21,6 +26,8 @@ export const useDriverTrackingStore = defineStore('driverTracking', {
         lastSentAt: null,
         sendError: '',
         permissionState: 'unknown', // granted | prompt | denied | unsupported | unknown
+        // Ubicación del sistema (GPS/red): null = sin comprobar, false = apagada.
+        locationEnabled: null,
         watchActive: false,
         isTracking: false,
         session: null,
@@ -42,11 +49,39 @@ export const useDriverTrackingStore = defineStore('driverTracking', {
     },
 
     actions: {
+        /**
+         * Comprueba si la ubicación del sistema está encendida. En Android usa el
+         * puente nativo; si no existe, interpreta el error del plugin (que se
+         * lanza cuando los servicios están apagados).
+         */
+        async checkLocationEnabled() {
+            if (!Capacitor.isNativePlatform()) return this.locationEnabled;
+            const nativo = await backgroundTracking.isLocationEnabled();
+            if (nativo !== null) {
+                this.locationEnabled = nativo;
+                return this.locationEnabled;
+            }
+            try {
+                await Geolocation.checkPermissions();
+                this.locationEnabled = true;
+            } catch (err) {
+                if (esErrorServiciosDesactivados(err)) this.locationEnabled = false;
+            }
+            return this.locationEnabled;
+        },
+
         async checkPermission() {
             try {
                 if (Capacitor.isNativePlatform()) {
-                    const perm = await Geolocation.checkPermissions();
-                    this.permissionState = perm.location === 'granted' ? 'granted' : 'prompt';
+                    await this.checkLocationEnabled();
+                    try {
+                        const perm = await Geolocation.checkPermissions();
+                        this.permissionState = perm.location === 'granted'
+                            ? 'granted'
+                            : (perm.location === 'denied' ? 'denied' : 'prompt');
+                    } catch {
+                        this.permissionState = 'unknown';
+                    }
                     return this.permissionState;
                 }
                 if (!navigator.geolocation || window.isSecureContext === false) {
@@ -98,6 +133,13 @@ export const useDriverTrackingStore = defineStore('driverTracking', {
             this.starting = true;
             this.errorMsg = '';
             try {
+                // Sin ubicación del sistema no se crea sesión en el servidor.
+                await this.checkLocationEnabled();
+                if (this.locationEnabled === false) {
+                    this.errorMsg = MENSAJE_UBICACION_DESACTIVADA;
+                    return null;
+                }
+
                 // Punto exacto de inicio (no bloquea si falla).
                 let firstPosition = null;
                 try {
@@ -177,21 +219,45 @@ export const useDriverTrackingStore = defineStore('driverTracking', {
             }
         },
 
+        /**
+         * Pide el permiso al sistema y traduce sus errores: GPS apagado y
+         * permiso denegado reciben mensajes distintos para que la UI ofrezca
+         * la acción correcta.
+         */
+        async solicitarPermisoNativo() {
+            try {
+                const perm = await Geolocation.requestPermissions();
+                if (perm.location === 'denied') {
+                    this.permissionState = 'denied';
+                    throw new Error(MENSAJE_PERMISO_DENEGADO);
+                }
+                this.permissionState = 'granted';
+                this.locationEnabled = true;
+                return perm;
+            } catch (err) {
+                if (esErrorServiciosDesactivados(err)) {
+                    this.locationEnabled = false;
+                    throw new Error(MENSAJE_UBICACION_DESACTIVADA);
+                }
+                throw err;
+            }
+        },
+
         async startWatch() {
             if (this.watchActive) return;
             const isNative = Capacitor.isNativePlatform();
 
             if (isNative) {
-                const perm = await Geolocation.requestPermissions();
-                if (perm.location === 'denied') {
-                    this.permissionState = 'denied';
-                    throw new Error('Permiso de ubicación denegado por el usuario.');
-                }
-                this.permissionState = 'granted';
+                await this.solicitarPermisoNativo();
                 const id = await Geolocation.watchPosition(
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
                     (position, err) => {
                         if (err || !position?.coords) {
+                            if (esErrorServiciosDesactivados(err)) {
+                                this.locationEnabled = false;
+                                this.errorMsg = MENSAJE_UBICACION_DESACTIVADA;
+                                return;
+                            }
                             this.errorMsg = err?.message || 'Error al obtener posición GPS.';
                             return;
                         }
@@ -294,8 +360,7 @@ export const useDriverTrackingStore = defineStore('driverTracking', {
 
         async getCurrentPosition() {
             if (Capacitor.isNativePlatform()) {
-                const perm = await Geolocation.requestPermissions();
-                if (perm.location === 'denied') throw new Error('Permiso de ubicación denegado por el usuario.');
+                await this.solicitarPermisoNativo();
                 return Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
             }
             if (!navigator.geolocation) {
@@ -353,10 +418,34 @@ export const useDriverTrackingStore = defineStore('driverTracking', {
         },
 
         /** Reintento manual con gesto del usuario (botón Activar ubicación). */
+        /** Abre la pantalla de ubicación del sistema (Android). Devuelve false si no es posible. */
+        async abrirAjustesUbicacion() {
+            return backgroundTracking.openLocationSettings();
+        },
+
+        /**
+         * Al volver a la app (tras activar la ubicación en los ajustes) vuelve a
+         * comprobar el GPS y, si ya está encendido, reanuda el rastreo sin que el
+         * conductor tenga que pulsar nada.
+         */
+        async alVolverALaApp() {
+            if (!Capacitor.isNativePlatform()) return;
+            const antes = this.locationEnabled;
+            await this.checkPermission();
+            if (antes === false && this.locationEnabled === true) {
+                this.errorMsg = '';
+                if (!this.isTracking && this.vehicleUuid) await this.ensureTracking();
+            }
+        },
+
         async retryFromUserGesture() {
             this.errorMsg = '';
             this.bloqueoSesion = '';
             await this.checkPermission();
+            if (this.locationEnabled === false) {
+                this.errorMsg = MENSAJE_UBICACION_DESACTIVADA;
+                return;
+            }
             if (this.isTracking && !this.watchActive) {
                 await this.startWatch();
                 await this.startBackgroundService();
