@@ -1,34 +1,65 @@
-## NOA v1.2.5 — Conexión unificada al servidor
+## NOA v1.2.6 — Ubicación del teléfono y solicitudes de tanqueo
 
-App de Transportes Sin Barreras para Android (Vue + Capacitor).
+App de **Transportes Sin Barreras** para Android (Vue + Capacitor).
 
-### Incluye
+> Esta versión corrige la pantalla de **solicitudes de tanqueo**, donde el QR aprobado no se mostraba, y evita que el rastreo falle en silencio cuando la **ubicación del teléfono está apagada**.
 
-- **API unificada**: la app nativa, la versión web y los recursos de media apuntan ahora a `https://apinoa.transportessinbarreras.com/api/v1/`. Se retiran las referencias al dominio anterior `api.transportessinbarreras.com` y al host histórico `apinoatransportes.solucionesintegralesmana.com`.
-- **Variables de entorno actualizadas**: `VITE_API_BASE_URL`, `VITE_API_NATIVE_URL` y `VITE_API_PROXY_TARGET` usan el mismo servidor; el valor por defecto de `API_NATIVE_URL` en `src/utils/env.js` también queda alineado.
-- **Recursos y PDF**: la resolución de media y los enlaces de archivos usan la nueva base, sin mezclar dominios.
-- **Assets de Android regenerados** con la configuración nueva (`cap sync`).
-- Se mantienen las funciones publicadas en v1.2.4: control de combustible, estado por vehículo, solicitudes de tanqueo con QR, alertas y sucursal del tercero.
+---
 
-### Requisitos
+### ✨ Novedades
+
+| | Función | Qué cambia para ti |
+|---|---|---|
+| 📍 | **Aviso de ubicación apagada** | Si el GPS del teléfono está desactivado, NOA lo indica y ofrece **Abrir ajustes de ubicación**. Al volver a la app, el rastreo se reanuda solo. |
+| 📝 | **Motivo de rechazo** | Al rechazar una solicitud de tanqueo, la empresa escribe el motivo y el conductor lo ve en su listado. |
+| 🧭 | **Acceso desde el menú** | Quien tenga permiso de solicitudes de tanqueo la encuentra en el menú lateral, en **Combustible**. |
+
+> ℹ️ Android no permite encender el GPS desde una aplicación. NOA abre la pantalla de ubicación del teléfono y tú la activas allí.
+
+---
+
+### 🛠️ Correcciones
+
+- **QR aprobado sin imágenes**: el código QR ahora se muestra completo en la estación.
+- **Vehículos que no cargan**: si falla la carga, NOA muestra el problema y un botón **Reintentar**, en lugar de decir "no tienes vehículos asignados".
+- **Acciones sin permiso**: los botones y tarjetas de solicitudes solo aparecen si tu usuario puede usarlos.
+- **Estados desconocidos**: una solicitud con un estado nuevo ya no aparece como "Anulada"; se muestra "Estado no disponible".
+- **Mensajes técnicos**: los errores de red ya no muestran textos en inglés como `Network Error`; se muestra un mensaje claro en español.
+- **Listado completo**: si tienes más de 50 solicitudes, NOA indica cuántas se muestran.
+- **Botones táctiles**: las acciones de solicitudes tienen al menos 48 px de altura para usarlas con una mano.
+
+---
+
+### 📲 Cómo actualizar
+
+1. Descarga `NOA-v1.2.6.apk` desde este Release.
+2. Instálalo encima de la versión actual **sin desinstalar**: conservas tus datos y tu sesión.
+3. Si Android lo pide, permite **instalar apps desconocidas** para este origen.
+4. Abre NOA. La app también puede ofrecerte la actualización automáticamente.
+
+Para verificar la descarga, compara el SHA256 con el archivo `NOA-v1.2.6.apk.sha256.txt` adjunto.
+
+---
+
+### 📋 Requisitos
 
 - Android 7.0 o superior.
 - Conexión al servidor `https://apinoa.transportessinbarreras.com/api/v1/`.
-- Permisos: ubicación (incluida en segundo plano), notificaciones, ejecución en segundo plano e instalación de paquetes.
+- Permisos: **ubicación** (incluida en segundo plano), **notificaciones**, **ejecución en segundo plano** e **instalación de paquetes**.
+- Ubicación del teléfono **activada** para registrar la ruta.
 
-### Instalación
+---
 
-1. Descargar `NOA-v1.2.5.apk` desde este Release.
-2. Permitir "instalar apps desconocidas" cuando Android lo pida.
-3. Abrir NOA e iniciar sesión con tu usuario.
+### 🔍 Verificación técnica
 
-### Actualizaciones futuras
+| Campo | Valor |
+|---|---|
+| `applicationId` | `com.transportessinbarreras.noa` |
+| `versionName` | `1.2.6` |
+| `versionCode` | `14` (base de `build.gradle` 13 + 1) |
+| Firma | Release |
+| Servidor | `https://apinoa.transportessinbarreras.com/api/v1/` |
 
-- Instalar el APK nuevo encima, sin desinstalar: conserva datos y sesión.
-- La propia app detecta la nueva versión y ofrece la descarga automática.
-- Verifica el SHA256 con el `.sha256.txt` adjunto si lo descargaste fuera de aquí.
-
-### Verificación técnica
-
-- `applicationId com.transportessinbarreras.noa`, `versionName 1.2.5`, `versionCode 13` (build.gradle 12 + 1), APK firmado release.
-- Servidor API configurado en `https://apinoa.transportessinbarreras.com/api/v1/`.
+- Pruebas unitarias: 147 en verde.
+- Build web y sincronización nativa (`cap sync`) correctas.
+- Compilación nativa verificada con el plugin de rastreo actualizado.
