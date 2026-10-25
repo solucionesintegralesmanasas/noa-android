@@ -2,9 +2,13 @@ import { logger } from "@utils/logger.js";
 import apiClient from "@services/api/client.js";
 import { useUserStore } from "@store/modules/user.js";
 import { usePermissionsStore } from "@store/modules/permissions.js";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
+
+// Guarda archivos en Descargas/NOA (plugin nativo propio). En web queda como
+// proxy de Capacitor: solo se usa cuando isNativePlatform() es true.
+const NoaFiles = registerPlugin("NoaFiles");
 
 const ROLES = Object.freeze({
     SUPERADMIN: 'SUPERADMIN',
@@ -148,9 +152,63 @@ export class BaseService {
     }
 
     /**
+     * Guarda un blob en la carpeta Descargas/NOA del dispositivo mediante el
+     * plugin nativo `NoaFiles`. Solo en plataforma nativa: en web el navegador
+     * gestiona su propia descarga y no tiene sentido escribir en disco.
+     *
+     * @param {Blob} blob - Contenido del archivo.
+     * @param {string} filename - Nombre con el que queda guardado.
+     * @param {string} mime - Tipo MIME del archivo.
+     * @returns {Promise<boolean>} true si el archivo ya está en el dispositivo.
+     */
+    async _guardarEnDescargas(blob, filename, mime) {
+        if (!Capacitor.isNativePlatform()) return false;
+        try {
+            const data = await this._blobToBase64(blob);
+            const guardado = await NoaFiles.saveToDownloads({ name: filename, data, mime });
+            logger.info(`[_guardarEnDescargas] Guardado en ${guardado?.path ?? filename}`);
+            return true;
+        } catch (err) {
+            // Respeta el peor caso primero: si Descargas no está disponible
+            // (permiso denegado, almacenamiento lleno…) el llamador usa su
+            // respaldo en lugar de dejar el archivo perdido.
+            logger.warn('[_guardarEnDescargas] No se pudo guardar en Descargas:', err);
+            return false;
+        }
+    }
+
+    /**
+     * Respaldo de las descargas nativas: escribe en la caché de la app y abre
+     * el diálogo nativo para abrir o compartir el archivo.
+     * Relanza los errores (incluida la cancelación) para que el llamador decida.
+     */
+    async _compartirEnCache(blob, filename, dialogTitle) {
+        const base64Data = await this._blobToBase64(blob);
+        await Filesystem.writeFile({
+            path: filename,
+            data: base64Data,
+            directory: Directory.Cache,
+            recursive: true,
+        });
+        const { uri } = await Filesystem.getUri({ path: filename, directory: Directory.Cache });
+        await Share.share({
+            title: filename,
+            url: uri,
+            dialogTitle,
+        });
+    }
+
+    _esCancelDeShare(err) {
+        return !!(err?.message?.includes('Share canceled') || err?.errorMessage?.includes('canceled'));
+    }
+
+    /**
      * Helper genérico para visualizar/descargar archivos PDF.
+     * Devuelve el estado de la descarga (`guardado` | `compartido` |
+     * `cancelado` | `fallido` | `web`) para que el llamador avise con verdad.
      * - Web: abre el PDF en una nueva pestaña.
-     * - Android/iOS: guarda en caché y abre con el visor/app nativa mediante Share API.
+     * - Android/iOS: guarda en Descargas/NOA y, si no es posible, en caché con
+     *   el diálogo nativo (Share API).
      */
     async _downloadPdf(url, filename = 'documento.pdf') {
         const instance = this._getInstance();
@@ -167,42 +225,22 @@ export class BaseService {
 
         // ─── PLATAFORMA NATIVA (Android + iOS) ────────────────────────────
         if (Capacitor.isNativePlatform()) {
+            // 1) Descarga directa: el archivo queda en Descargas/NOA.
+            if (await this._guardarEnDescargas(blob, cleanFileName, 'application/pdf')) return 'guardado';
+
+            // 2) Respaldo: caché + abrir/compartir con la app nativa.
             try {
-                const base64Data = await this._blobToBase64(blob);
-
-                // Guardamos en Cache para no requerir permisos de almacenamiento.
-                // (El resultado no se usa: el archivo queda disponible en caché.)
-                await Filesystem.writeFile({
-                    path: cleanFileName,
-                    data: base64Data,
-                    directory: Directory.Cache,
-                    recursive: true,
-                });
-
-                // Obtenemos la URI nativa del archivo guardado
-                const { uri } = await Filesystem.getUri({
-                    path: cleanFileName,
-                    directory: Directory.Cache,
-                });
-
-                // Abrimos el archivo con la app de PDF nativa del dispositivo
-                await Share.share({
-                    title: cleanFileName,
-                    url: uri,
-                    dialogTitle: 'Abrir o compartir PDF',
-                });
-
-                return;
+                await this._compartirEnCache(blob, cleanFileName, 'Abrir o compartir PDF');
+                return 'compartido';
             } catch (err) {
-                logger.warn('[_downloadPdf] Error abriendo PDF nativo, usando fallback web:', err);
-                // Si Share falla (ej. usuario cancela), no hacemos nada más
-                if (err?.message?.includes('Share canceled') || err?.errorMessage?.includes('canceled')) {
-                    return;
-                }
-                // Fallback: notificar con el toast estándar (carga diferida)
+                logger.warn('[_downloadPdf] Error abriendo PDF nativo:', err);
+                // El usuario cerró el diálogo: no hay nada que avisar
+                if (this._esCancelDeShare(err)) return 'cancelado';
+                // Aviso de error (carga diferida); el llamador ve `fallido`
+                // y no inventa un éxito.
                 const { toast } = await import("@utils/toast.js");
-                await toast('Error al abrir PDF', 'No se pudo abrir el archivo PDF. Asegúrese de tener una app lectora de PDFs instalada.', 'error');
-                return;
+                await toast('Error al abrir PDF', 'No se pudo guardar ni abrir el archivo PDF. Asegúrese de tener una app lectora de PDFs instalada.', 'error');
+                return 'fallido';
             }
         }
 
@@ -216,10 +254,13 @@ export class BaseService {
         link.click();
         document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
+        return 'web';
     }
 
     /**
-     * Descarga un archivo Excel como blob en web y nativo.
+     * Descarga un archivo Excel: en el navegador con el enlace habitual y en
+     * Android guardándolo en Descargas/NOA (o compartiéndolo desde caché si
+     * Descargas no está disponible). Devuelve el mismo estado que `_downloadPdf`.
      */
     async _downloadExcel(url, filename = 'reporte.xlsx') {
         const instance = this._getInstance();
@@ -231,6 +272,23 @@ export class BaseService {
             throw await this._blobErrorToMessage(err);
         }
         const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        if (Capacitor.isNativePlatform()) {
+            const mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            if (await this._guardarEnDescargas(blob, filename, mime)) return 'guardado';
+            try {
+                await this._compartirEnCache(blob, filename, 'Abrir o compartir reporte');
+                return 'compartido';
+            } catch (err) {
+                if (this._esCancelDeShare(err)) return 'cancelado';
+                logger.warn('[_downloadExcel] No se pudo guardar ni compartir el Excel:', err);
+                // En la WebView `link.click()` no guarda nada: no se finge éxito.
+                const { toast } = await import("@utils/toast.js");
+                await toast('Error al descargar', 'No se pudo guardar el archivo en el dispositivo. Inténtalo de nuevo.', 'error');
+                return 'fallido';
+            }
+        }
+
         const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = blobUrl;
@@ -239,6 +297,7 @@ export class BaseService {
         link.click();
         document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
+        return 'web';
     }
 
     /**

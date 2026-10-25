@@ -13,6 +13,8 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         // Puente JS <-> servicio foreground de rastreo (sobrevive con app cerrada).
         registerPlugin(TrackingPlugin.class);
+        // Puente JS <-> guardado de archivos en Descargas/NOA.
+        registerPlugin(NoaFilesPlugin.class);
 
         // En debug: desactivar caché del WebView para que los cambios web
         // se reflejen sin borrar datos de la app en el teléfono.

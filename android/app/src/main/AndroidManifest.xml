@@ -60,5 +60,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Instalación del APK desde el auto-update (Android 8+) -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Escritura en Descargas/NOA solo en Android 9 o anterior (en 10+ va por MediaStore, sin permiso) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-feature android:name="android.hardware.location.gps" />
 </manifest>

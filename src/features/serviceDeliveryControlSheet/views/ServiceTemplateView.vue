@@ -2807,15 +2807,15 @@ onMounted(async () => {
         }
         proyectosCargados.value = true;
 
-        if (esConductor && uuidsConductor.length) {
-            const permitidos = new Set((proyectosList.value || []).map(p => p.uuid));
-            serviciosCatalogo.value = validList.filter(s => {
-                if (!(s.is_active == 1 || s.is_active === true)) return false;
-                const projUuid = s.project_uuid || s.project?.uuid;
-                if (projUuid && permitidos.has(projUuid)) return true;
-                const conductorPlanilla = s.internal_control?.third_party_uuid || '';
-                return !!conductorPlanilla && uuidsConductor.includes(conductorPlanilla);
-            });
+        if (esConductor) {
+            // Filtro estricto del conductor: solo sus planillas. La rama anterior
+            // "proyecto permitido" dejaba ver las hojas de todo el proyecto,
+            // incluidas las de otros conductores. Sin identidad de conductor no
+            // se muestra ninguna fila (nunca "por si acaso").
+            serviciosCatalogo.value = uuidsConductor.length
+                ? validList.filter(s => (s.is_active == 1 || s.is_active === true)
+                    && uuidsConductor.includes(s.internal_control?.third_party_uuid || ''))
+                : [];
         } else {
             serviciosCatalogo.value = validList.filter(s => s.is_active == 1 || s.is_active === true);
         }

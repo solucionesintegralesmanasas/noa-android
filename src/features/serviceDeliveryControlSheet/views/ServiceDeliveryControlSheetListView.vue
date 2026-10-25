@@ -71,11 +71,14 @@
                     </div>
                     <div v-if="!isViewLoading && !store.loading" class="text-muted text-nowrap">
                         <small>
-                            <i class="fad fa-filter me-1" />
+                            <i class="fad fa-filter me-1" aria-hidden="true" />
                             {{ store.pagination.totalItems }} resultado{{
                                 store.pagination.totalItems !== 1 ? "s" : ""
                             }}
                             <span v-if="store.search"> para "{{ store.search }}"</span>
+                        </small>
+                        <small v-if="store.modoConductor" class="d-block">
+                            <i class="fad fa-user-tie me-1" aria-hidden="true" />Solo ves tus planillas de servicio
                         </small>
                     </div>
                 </div>
@@ -131,8 +134,7 @@
                             class="table table-sm mb-0 professional-table"
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-                            emptyMessage="No se encontraron registros" @page="onPageChange">
-
+                            :emptyMessage="textoSinResultados" @page="onPageChange">
                             <Column expander style="width: 3rem" />
 
                             <Column header="Proyecto / Tipo" style="min-width: 160px;">
@@ -332,8 +334,8 @@
         <MobileEmptyState
             v-else
             emoji="🚌"
-            title="Sin hojas de servicio"
-            description="No hay registros de control de servicio para los filtros seleccionados."
+            :title="textoSinResultados"
+            :description="detalleSinResultados"
             action-text="Control en Ruta"
             action-icon="fad fa-steering-wheel"
             @action="goToInternalControl"
@@ -377,7 +379,7 @@ import { useTableActions } from '@/hooks/useTableActions.js';
 import BasePageHeader from '@/components/BasePageHeader.vue';
 import NoaTableSpinner from '@/components/NoaTableSpinner.vue';
 import ServiceReportsDialog from '../components/ServiceReportsDialog.vue';
-import { formatRango as formatRangoHook, diasHijos as diasHijosHook, recorridosCount as recorridosCountHook, recorridosTexto as recorridosTextoHook, esCerrado } from '../hooks/useServiceList.js';
+import { formatRango as formatRangoHook, diasHijos as diasHijosHook, recorridosCount as recorridosCountHook, recorridosTexto as recorridosTextoHook, esCerrado, paginaDestino } from '../hooks/useServiceList.js';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import MobileCard from '@/components/mobile/MobileCard.vue';
@@ -403,12 +405,42 @@ const sharingLink = ref(null);
 
 const canShareCoordinatorLink = computed(() => permissionsStore.hasAnyRole('SUPERADMIN', 'ADMIN_EMPRESA'));
 
-const permissions = reactive({ edit: false, delete: false, pdf: false });
+// Texto del estado vacío: en modo conductor el vacío casi siempre es "aún no
+// te asignan planillas" o un filtro demasiado estrecho, no un error del sistema.
+const esConductor = computed(() => store.modoConductor || permissionsStore.hasRole('CONDUCTOR'));
+const conFiltros = computed(() => !!(store.search || store.projectFilter || store.soloCerradas));
+const textoSinResultados = computed(() => {
+    if (!esConductor.value) return 'No se encontraron registros';
+    return conFiltros.value
+        ? 'No tienes planillas con estos filtros'
+        : 'Aún no tienes planillas de servicio asignadas';
+});
+const detalleSinResultados = computed(() => {
+    if (!esConductor.value) return 'No hay registros de control de servicio para los filtros seleccionados.';
+    return conFiltros.value
+        ? 'Solo se muestran las planillas de tu vehículo asignado: revisa o limpia los filtros.'
+        : 'Aquí aparecerán las planillas de tu vehículo asignado. Si falta alguna, contacta a la central.';
+});
+
+const permissions = reactive({ create: false, edit: false, delete: false, pdf: false });
 const { debouncedSearch } = useTable({}, () => store.setGlobalFilter(searchQuery.value));
 const { confirmDelete, initTooltips } = useTableActions(store, router);
 
 const clearSearch = async () => { searchQuery.value = ''; await store.clearFilters(); };
 const refreshTable = () => store.fetchItems();
+// PrimeVue envía { first, rows, page } y los botones móviles { page, rows };
+// con un evento roto no se navega (paginaDestino devuelve null). Un cambio de
+// `rows` (desplegable "por página") se aplica antes de saltar de página.
+const onPageChange = async (evento) => {
+    const filas = Number(evento?.rows);
+    if (Number.isInteger(filas) && filas > 0 && filas !== store.pagination.itemsPerPage) {
+        await store.setItemsPerPage(filas);
+        return;
+    }
+    const destino = paginaDestino(evento, store.pagination.itemsPerPage);
+    if (!destino || destino === store.pagination.currentPage) return;
+    await store.setPage(destino);
+};
 const onProjectFilterChange = async () => { await store.setProjectFilter(projectFilter.value); };
 const onSoloCerradasChange = async () => { await store.setSoloCerradas(soloCerradas.value); };
 
@@ -479,13 +511,23 @@ const shareCoordinatorLink = async (uuid) => {
 onMounted(async () => {
     isViewLoading.value = true;
     try {
-        await store.loadFormOptions(userStore.company_uuid);
+        // Asegura roles antes de decidir si los catálogos se acotan al conductor.
+        try {
+            if (!permissionsStore.isLoaded) await permissionsStore.load();
+        } catch { /* permisos ya persistidos: se continúa con lo disponible */ }
+        const esRolConductor = permissionsStore.hasRole('CONDUCTOR');
+        // En modo conductor los catálogos se piden con su tercero: sin él el
+        // backend devolvería los proyectos de toda la empresa.
+        const conductorUuid = esRolConductor
+            ? (userStore.uuid_driver || userStore.third_party_uuid || null)
+            : null;
+        await store.loadFormOptions(userStore.company_uuid, conductorUuid);
         if (store.catalogs.projects) store.projects = store.catalogs.projects;
         permissions.pdf = permissionsStore.can('service_delivery_control_sheets.history_pdf');
+        permissions.create = permissionsStore.can('service_delivery_control_sheets.create');
         // El listado arranca mostrando todo (abiertas y cerradas); el
         // interruptor "Solo cerradas" filtra bajo demanda.
         soloCerradas.value = store.soloCerradas;
-        permissions.view = permissionsStore.can('service_delivery_control_sheets.view');
         permissions.edit = permissionsStore.can('service_delivery_control_sheets.update');
         permissions.delete = permissionsStore.can('service_delivery_control_sheets.delete');
         await store.fetchItems();

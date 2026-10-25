@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { toast } from '@/utils/toast.js';
 import { runStoreAction } from '@store/helpers/runStoreAction.js';
+import { usePermissionsStore, useUserStore } from '@store';
+import { filtrarPlanillas, mensajeDescarga } from '../hooks/useServiceList.js';
 import serviceDeliveryControlSheetService from '../services/serviceDeliveryControlSheet.service.js';
 
 /**
@@ -24,6 +26,16 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
         soloCerradas: false,
         pagination: { currentPage: 1, itemsPerPage: 10, totalItems: 0, totalPages: 0 },
         search: '',
+        // Modo conductor: el backend no filtra por conductor en este listado,
+        // así que se carga el catálogo de la empresa, se acotan las suyas y la
+        // paginación se calcula en el cliente.
+        modoConductor: false,
+        conductorCargado: false,
+        planillasConductor: [],
+        // UUIDs con los que se cargó `planillasConductor`: si la sesión cambia
+        // (conductor ↔ administrador, u otro conductor) no se sigue filtrando
+        // con los datos del usuario anterior.
+        uuidsCargados: null,
     }),
 
     getters: {
@@ -44,10 +56,22 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
         },
 
         /**
-         * Obtiene la lista de registros desde el servidor con paginación.
+         * Carga el listado. El conductor trabaja sobre el catálogo completo
+         * (el endpoint paginado no acepta filtro por conductor) y el resto
+         * sigue con paginación del servidor.
          * @returns {Promise<void>}
          */
         async fetchItems() {
+            // El rol puede cambiar entre sesiones sin recrear el store: se
+            // recalcula en cada carga y el estado del modo anterior se descarta.
+            const esConductor = this._esConductor();
+            if (this.modoConductor !== esConductor) {
+                this.modoConductor = esConductor;
+                this.conductorCargado = false;
+                this.planillasConductor = [];
+                this.uuidsCargados = null;
+            }
+            if (esConductor) return this._fetchPlanillasConductor();
             return this._run(async () => {
                 const response = await serviceDeliveryControlSheetService.list({
                     page: this.pagination.currentPage,
@@ -63,6 +87,125 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
                 this.pagination.totalPages = p.last_page ?? 1;
                 this.pagination.itemsPerPage = p.per_page ?? this.pagination.itemsPerPage;
             }, 'Error al cargar los datos');
+        },
+
+        /**
+         * true cuando la sesión es de conductor: solo debe ver sus planillas.
+         * Falla en falso si los permisos aún no cargaron (no se ocultan datos
+         * por un error de roles).
+         * @returns {boolean}
+         * @private
+         */
+        _esConductor() {
+            try {
+                return usePermissionsStore().hasRole('CONDUCTOR');
+            } catch {
+                return false;
+            }
+        },
+
+        /**
+         * UUIDs que identifican al conductor logueado (conductor y, en su caso,
+         * el tercero afiliado: el pivote puede guardar cualquiera de los dos).
+         * @returns {string[]}
+         * @private
+         */
+        _uuidsConductor() {
+            try {
+                const u = useUserStore();
+                return [u?.uuid_driver, u?.third_party_uuid].filter(Boolean);
+            } catch {
+                return [];
+            }
+        },
+
+        /**
+         * Descarga el catálogo de la empresa y lo acota a las planillas del
+         * conductor. Sin identidad de conductor no se muestra ninguna fila.
+         * @returns {Promise<void>}
+         * @private
+         */
+        async _fetchPlanillasConductor() {
+            return this._run(async () => {
+                const response = await serviceDeliveryControlSheetService.listAll();
+                const cuerpo = response?.data?.data ?? response?.data ?? response;
+                this.planillasConductor = Array.isArray(cuerpo) ? cuerpo : [];
+                this.uuidsCargados = this._uuidsConductor();
+                this.conductorCargado = true;
+                this._aplicarFiltrosConductor();
+            }, 'Error al cargar los datos');
+        },
+
+        /**
+         * Filtra por conductor (más búsqueda, proyecto y "solo cerradas") y
+         * pagina en el cliente sobre el resultado.
+         * @private
+         */
+        _aplicarFiltrosConductor() {
+            const filtradas = filtrarPlanillas(this.planillasConductor, {
+                uuidsConductor: this._uuidsConductor(),
+                busqueda: this.search,
+                projectUuid: this.projectFilter,
+                soloCerradas: this.soloCerradas,
+            });
+            const total = filtradas.length;
+            const porPagina = this.pagination.itemsPerPage || 10;
+            const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
+            if (this.pagination.currentPage > totalPaginas) this.pagination.currentPage = totalPaginas;
+            const inicio = (this.pagination.currentPage - 1) * porPagina;
+            this.items = filtradas.slice(inicio, inicio + porPagina);
+            this.pagination.totalItems = total;
+            this.pagination.totalPages = totalPaginas;
+        },
+
+        /**
+         * Recarga respetando el modo: en conductor no se vuelve a pedir la red
+         * por cada tecla o cambio de página, y si la primera carga falló se
+         * reintenta contra el servidor. Si la identidad del conductor cambió
+         * (cambio de sesión), el catálogo cargado ya no sirve y se vuelve a
+         * pedir en lugar de filtrar con los UUIDs de otro usuario.
+         * @returns {Promise<void>}
+         * @private
+         */
+        _refrescar() {
+            if (this.modoConductor && this.conductorCargado && this._mismoConductorCargado()) {
+                this._aplicarFiltrosConductor();
+                return Promise.resolve();
+            }
+            return this.fetchItems();
+        },
+
+        /**
+         * true si los UUIDs con los que se cargó el catálogo siguen siendo
+         * los del usuario actual (comparación por conjunto, sin importar el
+         * orden ni duplicados).
+         * @returns {boolean}
+         * @private
+         */
+        _mismoConductorCargado() {
+            const cargados = [...new Set(this.uuidsCargados || [])].sort();
+            const actuales = [...new Set(this._uuidsConductor())].sort();
+            // Sin identidad a ningún lado el resultado es el mismo (0 filas):
+            // no hay nada que recargar y no se martillea la red.
+            if (!cargados.length || !actuales.length) return cargados.length === actuales.length;
+            return cargados.length === actuales.length
+                && cargados.every((u, i) => u === actuales[i]);
+        },
+
+        /**
+         * Cambia las filas por página (el desplegable del paginador) y vuelve
+         * a la primera página con el modo que corresponda.
+         * @param {number} filas - Nuevas filas por página.
+         * @returns {Promise<void>}
+         */
+        setItemsPerPage(filas) {
+            const cantidad = Number(filas);
+            if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad === this.pagination.itemsPerPage) {
+                return Promise.resolve();
+            }
+            this.pagination.itemsPerPage = cantidad;
+            this.pagination.currentPage = 1;
+            return this._refrescar();
         },
 
         /**
@@ -108,7 +251,7 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
             }
         },
         loadFormOptions(companyUuid, thirdPartyUuid = null) { return this.loadCatalogs(companyUuid, thirdPartyUuid); },
-        setProjectFilter(uuid) { this.projectFilter = uuid || ''; this.pagination.currentPage = 1; return this.fetchItems(); },
+        setProjectFilter(uuid) { this.projectFilter = uuid || ''; this.pagination.currentPage = 1; return this._refrescar(); },
 
         /**
          * Actualiza un elemento localmente en el array de items.
@@ -255,45 +398,55 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
             }, 'Error al cargar el registro');
         },
 
-        setPage(page) { this.pagination.currentPage = page; return this.fetchItems(); },
-        setGlobalFilter(query) { this.search = query; this.pagination.currentPage = 1; return this.fetchItems(); },
-        clearFilters() { this.search = ''; this.pagination.currentPage = 1; return this.fetchItems(); },
-        setSoloCerradas(value) { this.soloCerradas = !!value; this.pagination.currentPage = 1; return this.fetchItems(); },
+        setPage(page) {
+            this.pagination.currentPage = page;
+            return this._refrescar();
+        },
+        setGlobalFilter(query) { this.search = query; this.pagination.currentPage = 1; return this._refrescar(); },
+        clearFilters() { this.search = ''; this.pagination.currentPage = 1; return this._refrescar(); },
+        setSoloCerradas(value) { this.soloCerradas = !!value; this.pagination.currentPage = 1; return this._refrescar(); },
 
         /**
-         * Descarga y abre el PDF diario de un registro en una pestaña nueva.
+         * Descarga el PDF diario de un registro (en Android queda en
+         * Descargas/NOA; en el navegador se descarga normalmente).
          * @param {string} uuid - UUID del registro.
          * @returns {Promise<void>}
          */
         async downloadDailyPdf(uuid) {
             return this._run(async () => {
-                await serviceDeliveryControlSheetService.downloadDailyPdf(uuid);
-                await toast('¡Éxito!', 'PDF diario abierto correctamente', 'success');
+                const estado = await serviceDeliveryControlSheetService.downloadDailyPdf(uuid);
+                const aviso = mensajeDescarga('PDF diario', estado);
+                if (aviso) await toast('¡Éxito!', aviso, 'success');
             }, 'Error al descargar el PDF diario');
         },
 
         /**
-         * Descarga y abre el PDF mensual consolidado en una pestaña nueva.
+         * Descarga el PDF mensual consolidado (en Android queda en
+         * Descargas/NOA; en el navegador se descarga normalmente).
          * @param {Object} params - Parámetros: vehicle_uuid, year, month.
          * @returns {Promise<void>}
          */
         async downloadMonthlyPdf(params) {
             return this._run(async () => {
-                await serviceDeliveryControlSheetService.downloadMonthlyPdf(params);
-                await toast('¡Éxito!', 'PDF mensual abierto correctamente', 'success');
+                const estado = await serviceDeliveryControlSheetService.downloadMonthlyPdf(params);
+                const aviso = mensajeDescarga('PDF mensual', estado);
+                if (aviso) await toast('¡Éxito!', aviso, 'success');
             }, 'Error al descargar el PDF mensual');
         },
 
         /**
-         * Descarga un reporte filtrado solo con días cerrados en PDF o Excel.
+         * Descarga un reporte filtrado solo con días cerrados en PDF o Excel
+         * (en Android queda en Descargas/NOA).
          * @param {string} tipo - rango|vehiculo|conductor|dia|mensual.
          * @param {Object} params - Filtros del reporte.
          * @param {string} formato - pdf|excel.
          */
         async downloadReport(tipo, params = {}, formato = 'pdf') {
             return this._run(async () => {
-                await serviceDeliveryControlSheetService.downloadReport(tipo, params, formato);
-                await toast('¡Éxito!', `Reporte ${tipo} en ${formato.toUpperCase()} generado (solo cerradas)`, 'success');
+                const estado = await serviceDeliveryControlSheetService.downloadReport(tipo, params, formato);
+                const etiqueta = `Reporte ${tipo} (${formato.toUpperCase()})`;
+                const aviso = mensajeDescarga(etiqueta, estado);
+                if (aviso) await toast('¡Éxito!', aviso, 'success');
             }, 'Error al descargar el reporte');
         },
 
