@@ -21,6 +21,7 @@ export const RUTAS_OPERATIVAS_CONDUCTOR = [
     '/vehiculos',
     '/profile',
     '/notificaciones',
+    '/solicitudes-tanqueo',
 ];
 
 export function esRutaOperativaConductor(path = '') {

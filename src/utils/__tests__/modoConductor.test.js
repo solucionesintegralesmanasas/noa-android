@@ -54,4 +54,11 @@ describe("esRutaOperativaConductor", () => {
         expect(esRutaOperativaConductor("/planilla-de-control-de-prestacion-servicios/12")).toBe(true);
         expect(esRutaOperativaConductor("/roles-permissions")).toBe(false);
     });
+    it("solicitudes de tanqueo usa el shell móvil del conductor", () => {
+        expect(esRutaOperativaConductor("/solicitudes-tanqueo")).toBe(true);
+        expect(esMovilConductor({ path: "/solicitudes-tanqueo", esConductor: true, esAndroidNativo: true })).toBe(true);
+    });
+    it("solicitudes de tanqueo sin rol conductor no recibe el shell del conductor", () => {
+        expect(esMovilConductor({ path: "/solicitudes-tanqueo", esConductor: false, esAndroidNativo: true })).toBe(false);
+    });
 });

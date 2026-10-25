@@ -220,7 +220,12 @@ const items = computed(() => {
 });
 
 function esActiva(item) {
-  if (item.to === '/dashboard') return route.path === '/dashboard' || route.path === '/dashboard/conductor';
+  // Solicitudes de tanqueo se abre desde la tarjeta de Inicio: Inicio sigue activa.
+  if (item.to === '/dashboard') {
+    return route.path === '/dashboard'
+      || route.path === '/dashboard/conductor'
+      || route.path.startsWith('/solicitudes-tanqueo');
+  }
   return item.prefijos.some((prefijo) => route.path.startsWith(prefijo));
 }
 </script>
