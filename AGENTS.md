@@ -140,6 +140,14 @@ Corrección de tres fallas de la pantalla de Control de Servicio (Solicitudes/Pl
 - **Medición de identidad y multi-vehículo (2026-10-25, contra la medición de la agrupación):** `totalJS` 2933.2 → 2933.5 kB (+0.3 kB, +0.01 %), `totalCSS` 292.1 kB (=), `indexJS` 145.3 kB (=), chunks 163 (=). a11y sin deltas (`<i>` sin `aria-hidden` 948 =, `label` sin `for` 91 =). `npm run test:unit` 206/206 en 15 archivos.
 - **Pendiente:** probar en teléfono el guardado real en `Descargas/NOA` (especialmente en Android 9 o anterior, que depende del permiso de almacenamiento concedido) y el filtrado con un usuario conductor real.
 
+### Rastreo: latido, 401 y servicio que no se queda mudo (2026-10-26)
+
+- **Latido nativo:** `TrackingForegroundService` sigue escuchando GPS cada 10 s/15 m y añade `NETWORK_PROVIDER` cada 60 s con distancia 0, más un `Handler` (`scheduleHeartbeat`) que reenvía la última posición si el último fix tiene menos de 10 min. Si el GPS dio un fix hace menos de 2 min, la posición de red se descarta para no mover el marcador con una lectura imprecisa. Si el último fix es más viejo que 10 min el latido se calla a propósito: el backend oculta el vehículo en vez de mostrar una posición congelada como viva. `lastAttemptAt` evita duplicar envíos en 90 s.
+- **401 sin perder el punto:** el servicio no puede refrescar el token de 8 h. Ante 401 guarda el payload en `pendingAfterAuth` y marca `needsAuth`; `flushPendingAfterAuth()` lo reenvía cuando la app vuelve a arrancar/actualizar contexto con token nuevo. Los 400/422 se registran como error visible y no se reintentan.
+- **Limpieza:** `detenerTimers()` quita los callbacks de cola y latido; `stopTracking()` limpia cola, pendiente y `needsAuth`; `onDestroy()` retira las actualizaciones de ubicación, los timers, el Wake Lock y apaga el executor. El trabajo de red pasa por `ejecutarEnSegundoPlano()` para no reventar si el servicio ya se está deteniendo.
+- **Verificación:** `:app:compileDebugJavaWithJavac` en verde con JDK 21 (`C:\Users\mdarw\.jdks\jbr-21.0.11`; el JBR de Android Studio actual es Java 25 y Gradle 8.14 no lo acepta).
+- **Pendiente:** instalar el APK nuevo en toda la flota antes de bajar `TRACKING_STALE_MINUTES`; los APK viejos solo reportan en movimiento.
+
 ## Convención de Commits
 
 - Mensajes directos en español, en una sola línea, formato `tipo(scope): descripción corta` (p. ej. `fix(android): ...`).

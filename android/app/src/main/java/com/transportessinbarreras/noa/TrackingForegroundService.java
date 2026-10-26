@@ -60,12 +60,19 @@ public class TrackingForegroundService extends Service implements LocationListen
     private static final int MAX_QUEUE = 200;
     private static final long MIN_TIME_MS = 10000;
     private static final float MIN_DISTANCE_M = 15f;
+    // Latido para que un vehículo parado siga reportando (el GPS con
+    // MIN_DISTANCE_M no emite si no se mueve) y para detectar un servicio mudo.
+    private static final long HEARTBEAT_MS = 60000;
+    private static final long HEARTBEAT_MAX_FIX_AGE_MS = 10 * 60 * 1000L;
+    private static final long HEARTBEAT_MIN_SEND_GAP_MS = 90 * 1000L;
 
     private LocationManager locationManager;
     private PowerManager.WakeLock wakeLock;
     private ExecutorService executor;
     private Handler flushHandler;
     private Runnable flushRunnable;
+    private Handler heartbeatHandler;
+    private Runnable heartbeatRunnable;
 
     @Override
     public void onCreate() {
@@ -110,6 +117,8 @@ public class TrackingForegroundService extends Service implements LocationListen
         }
         subscribeLocation();
         scheduleFlush();
+        scheduleHeartbeat();
+        flushPendingAfterAuth();
 
         return START_STICKY;
     }
@@ -134,14 +143,19 @@ public class TrackingForegroundService extends Service implements LocationListen
             } catch (Exception ignored) {}
             try {
                 if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME_MS, MIN_DISTANCE_M, this);
+                    // Distancia 0: Android entrega una posición de red cada minuto
+                    // aunque el vehículo esté parado. Es el latido del servicio.
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, HEARTBEAT_MS, 0f, this);
                 }
             } catch (Exception ignored) {}
-            // Punto inmediato para no esperar 10s tras abrir el servicio.
+            // Punto inmediato para no esperar 10s tras abrir el servicio, solo si
+            // la última posición conocida sigue siendo reciente (si no, es basura).
             try {
                 Location last = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 if (last == null) last = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                if (last != null) onLocationChanged(last);
+                if (last != null && System.currentTimeMillis() - last.getTime() < 2 * 60 * 1000L) {
+                    onLocationChanged(last);
+                }
             } catch (Exception ignored) {}
         } catch (Exception ignored) {}
     }
@@ -151,6 +165,17 @@ public class TrackingForegroundService extends Service implements LocationListen
         if (location == null) return;
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!prefs.getBoolean("tracking", false)) return;
+
+        // El proveedor de red es solo el latido: si el GPS dio un fix hace poco,
+        // no se envía una posición de red imprecisa ni se mueve el marcador.
+        boolean esRed = LocationManager.NETWORK_PROVIDER.equals(location.getProvider());
+        long ahora = System.currentTimeMillis();
+        if (esRed) {
+            long ultimoGps = prefs.getLong("lastGpsAt", 0);
+            if (ultimoGps > 0 && ahora - ultimoGps < 2 * 60 * 1000L) return;
+        } else {
+            prefs.edit().putLong("lastGpsAt", ahora).apply();
+        }
 
         double lat = location.getLatitude();
         double lng = location.getLongitude();
@@ -163,7 +188,7 @@ public class TrackingForegroundService extends Service implements LocationListen
                 .putString("lastLat", String.valueOf(lat))
                 .putString("lastLng", String.valueOf(lng))
                 .putInt("lastSpeed", speedKmh)
-                .putLong("lastFixAt", System.currentTimeMillis())
+                .putLong("lastFixAt", ahora)
                 .apply();
 
         updateNotification(prefs, speedKmh, moving);
@@ -172,13 +197,24 @@ public class TrackingForegroundService extends Service implements LocationListen
 
     private void enqueueOrSend(SharedPreferences prefs, double lat, double lng, int speedKmh, boolean moving, float accuracy) {
         JSONObject point = buildPoint(prefs, lat, lng, speedKmh, moving, accuracy);
-        executor.execute(() -> {
+        prefs.edit().putLong("lastAttemptAt", System.currentTimeMillis()).apply();
+        ejecutarEnSegundoPlano(() -> {
             if (!postPoint(prefs, point)) {
                 appendQueue(point);
             } else {
                 flushQueueAsync();
             }
         });
+    }
+
+    /**
+     * Encola trabajo en el hilo de red; si el servicio ya se está deteniendo
+     * (executor apagado) el latido se descarta en lugar de reventar el proceso.
+     */
+    private void ejecutarEnSegundoPlano(Runnable tarea) {
+        try {
+            if (executor != null && !executor.isShutdown()) executor.execute(tarea);
+        } catch (Exception ignored) {}
     }
 
     private JSONObject buildPoint(SharedPreferences prefs, double lat, double lng, int speedKmh, boolean moving, float accuracy) {
@@ -237,13 +273,28 @@ public class TrackingForegroundService extends Service implements LocationListen
             try (OutputStream os = conn.getOutputStream()) { os.write(body); }
             int code = conn.getResponseCode();
             if (code >= 200 && code < 300) {
-                prefs.edit().putLong("lastSentAt", System.currentTimeMillis()).putString("lastError", "").apply();
+                prefs.edit()
+                        .putLong("lastSentAt", System.currentTimeMillis())
+                        .putString("lastError", "")
+                        .putBoolean("needsAuth", false)
+                        .remove("pendingAfterAuth")
+                        .apply();
                 return true;
             }
-            // 401/400/422 no se reintentan en bucle: se guardan como error visible y no se encolan 401.
-            if (code == 401 || code == 400 || code == 422) {
+            // 401: el token de 8 h venció y el servicio no puede refrescarlo solo.
+            // Se guarda el punto para reenviarlo cuando la app abra y renueve el token.
+            if (code == 401) {
+                prefs.edit()
+                        .putString("pendingAfterAuth", payload.toString())
+                        .putBoolean("needsAuth", true)
+                        .putString("lastError", "Sesión expirada: abre la app para renovar el acceso")
+                        .apply();
+                return true; // no encolar: no se reintenta en bucle
+            }
+            // 400/422 son datos inválidos (vehículo/sesión): reintentar no ayuda.
+            if (code == 400 || code == 422) {
                 prefs.edit().putString("lastError", "HTTP " + code + " (revisa sesión/vehículo)").apply();
-                return true; // no encolar, evita tormenta
+                return true;
             }
             prefs.edit().putString("lastError", "HTTP " + code).apply();
             return false;
@@ -279,7 +330,7 @@ public class TrackingForegroundService extends Service implements LocationListen
     }
 
     private void flushQueueAsync() {
-        executor.execute(() -> {
+        ejecutarEnSegundoPlano(() -> {
             try {
                 SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
                 String raw = prefs.getString("queue", "[]");
@@ -295,13 +346,74 @@ public class TrackingForegroundService extends Service implements LocationListen
         });
     }
 
+    // ---- Latido del servicio ----
+
+    /**
+     * Programa un latido por minuto. El GPS con MIN_DISTANCE_M no emite si el
+     * vehículo está parado, así que sin esto la sesión se enfriaría y el mapa
+     * lo ocultaría aunque el servicio siga vivo.
+     */
+    private void scheduleHeartbeat() {
+        if (heartbeatHandler == null) heartbeatHandler = new Handler(Looper.getMainLooper());
+        if (heartbeatRunnable != null) heartbeatHandler.removeCallbacks(heartbeatRunnable);
+        heartbeatRunnable = new Runnable() {
+            @Override public void run() {
+                enviarLatido();
+                if (heartbeatHandler != null) heartbeatHandler.postDelayed(this, HEARTBEAT_MS);
+            }
+        };
+        heartbeatHandler.postDelayed(heartbeatRunnable, HEARTBEAT_MS);
+    }
+
+    /**
+     * Reenvía la última posición conocida. No inventa una posición: si el
+     * último fix tiene más de 10 minutos se calla, para que el vehículo
+     * desaparezca del mapa en lugar de mostrarse congelado como si estuviera vivo.
+     */
+    private void enviarLatido() {
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (!prefs.getBoolean("tracking", false)) return;
+
+        long ultimoFix = prefs.getLong("lastFixAt", 0);
+        long ahora = System.currentTimeMillis();
+        if (ultimoFix <= 0 || ahora - ultimoFix > HEARTBEAT_MAX_FIX_AGE_MS) return;
+
+        long ultimoIntento = prefs.getLong("lastAttemptAt", 0);
+        if (ultimoIntento > 0 && ahora - ultimoIntento < HEARTBEAT_MIN_SEND_GAP_MS) return;
+
+        String latStr = prefs.getString("lastLat", null);
+        String lngStr = prefs.getString("lastLng", null);
+        if (latStr == null || lngStr == null) return;
+
+        try {
+            double lat = Double.parseDouble(latStr);
+            double lng = Double.parseDouble(lngStr);
+            int speedKmh = prefs.getInt("lastSpeed", 0);
+            enqueueOrSend(prefs, lat, lng, speedKmh, speedKmh > 1, -1f);
+        } catch (NumberFormatException ignored) {}
+    }
+
+    /**
+     * Reenvía el punto que quedó pendiente por un 401 cuando la app renueva el
+     * token y vuelve a arrancar el servicio (ACTION_UPDATE o reinicio).
+     */
+    private void flushPendingAfterAuth() {
+        ejecutarEnSegundoPlano(() -> {
+            try {
+                SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+                if (!prefs.getBoolean("tracking", false)) return;
+                String pendiente = prefs.getString("pendingAfterAuth", null);
+                if (pendiente == null || pendiente.isEmpty()) return;
+                postPoint(prefs, new JSONObject(pendiente));
+            } catch (Exception ignored) {}
+        });
+    }
+
     private void stopTracking() {
         try {
             if (locationManager != null) locationManager.removeUpdates(this);
         } catch (Exception ignored) {}
-        if (flushHandler != null && flushRunnable != null) {
-            try { flushHandler.removeCallbacks(flushRunnable); } catch (Exception ignored) {}
-        }
+        detenerTimers();
         if (wakeLock != null && wakeLock.isHeld()) {
             try { wakeLock.release(); } catch (Exception ignored) {}
         }
@@ -309,10 +421,35 @@ public class TrackingForegroundService extends Service implements LocationListen
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                     .putBoolean("tracking", false)
                     .putString("queue", "[]")
+                    .remove("pendingAfterAuth")
+                    .putBoolean("needsAuth", false)
                     .apply();
         } catch (Exception ignored) {}
         try { stopForeground(true); } catch (Exception ignored) {}
         stopSelf();
+    }
+
+    /** Quita los callbacks periódicos para que un servicio detenido no siga enviando. */
+    private void detenerTimers() {
+        if (flushHandler != null && flushRunnable != null) {
+            try { flushHandler.removeCallbacks(flushRunnable); } catch (Exception ignored) {}
+        }
+        if (heartbeatHandler != null && heartbeatRunnable != null) {
+            try { heartbeatHandler.removeCallbacks(heartbeatRunnable); } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        try {
+            if (locationManager != null) locationManager.removeUpdates(this);
+        } catch (Exception ignored) {}
+        detenerTimers();
+        if (wakeLock != null && wakeLock.isHeld()) {
+            try { wakeLock.release(); } catch (Exception ignored) {}
+        }
+        if (executor != null) executor.shutdownNow();
+        super.onDestroy();
     }
 
     // ---- Notificación persistente (obligatoria para foreground) ----
