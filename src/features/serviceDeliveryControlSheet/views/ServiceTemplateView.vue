@@ -116,7 +116,7 @@
                                             :input-id="'servicioId'"
                                             v-model="formData.servicioId"
                                             :options="serviciosFiltrados" option-value="uuid"
-                                            :option-label="(s) => `${s.daily_route || recorridosTextoDe(s)} · ${tipoCorto(s.type_of_control_sheet)}${s.project?.project_name ? ' · ' + s.project.project_name : ''}`"
+                                            :option-label="(s) => s.vehicle_license_plate || `${s.daily_route || recorridosTextoDe(s)} · ${tipoCorto(s.type_of_control_sheet)}${s.project?.project_name ? ' · ' + s.project.project_name : ''}`"
                                             placeholder="— Seleccione un servicio —" showClear filter class="w-100"
                                             :invalid="!!validationErrors.servicioId"
                                             :disabled="sinProyectosAsignados"

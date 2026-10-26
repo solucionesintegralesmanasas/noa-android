@@ -24,6 +24,7 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
         projectDetail: null,
         projectFilter: '',
         soloCerradas: false,
+        agruparPorProyecto: true,
         pagination: { currentPage: 1, itemsPerPage: 10, totalItems: 0, totalPages: 0 },
         search: '',
         // Modo conductor: el backend no filtra por conductor en este listado,
@@ -79,6 +80,7 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
                     search: this.search || undefined,
                     project_uuid: this.projectFilter || undefined,
                     solo_cerradas: this.soloCerradas ? true : undefined,
+                    agrupar_proyecto: this.agruparPorProyecto ? true : undefined,
                 });
                 const p = response?.data ?? response;
                 this.items = p.data ?? [];
@@ -142,12 +144,16 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
          * @private
          */
         _aplicarFiltrosConductor() {
-            const filtradas = filtrarPlanillas(this.planillasConductor, {
+            let filtradas = filtrarPlanillas(this.planillasConductor, {
                 uuidsConductor: this._uuidsConductor(),
                 busqueda: this.search,
                 projectUuid: this.projectFilter,
                 soloCerradas: this.soloCerradas,
             });
+            if (this.agruparPorProyecto) {
+                // Agrupar por proyecto: orden por nombre para que cada grupo quede contiguo.
+                filtradas = [...filtradas].sort((a, b) => (a.project?.project_name || '').localeCompare(b.project?.project_name || '', 'es'));
+            }
             const total = filtradas.length;
             const porPagina = this.pagination.itemsPerPage || 10;
             const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
@@ -404,6 +410,7 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
         },
         setGlobalFilter(query) { this.search = query; this.pagination.currentPage = 1; return this._refrescar(); },
         clearFilters() { this.search = ''; this.pagination.currentPage = 1; return this._refrescar(); },
+        setAgruparPorProyecto(value) { this.agruparPorProyecto = !!value; this.pagination.currentPage = 1; return this._refrescar(); },
         setSoloCerradas(value) { this.soloCerradas = !!value; this.pagination.currentPage = 1; return this._refrescar(); },
 
         /**

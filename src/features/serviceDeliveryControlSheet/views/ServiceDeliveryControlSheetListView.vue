@@ -48,7 +48,7 @@
                         </span>
                         <input v-model="searchQuery" class="form-control form-control-sm border-start-0 shadow-none"
                             type="search" placeholder="Buscar por ruta, vehículo, conductor..."
-                            aria-label="Buscar hoja de control" @input="debouncedSearch" />
+                            aria-label="Buscar hoja de control" @input="debouncedSearch()" />
                         <button v-if="searchQuery" class="btn btn-outline-secondary border-start-0" type="button"
                             title="Limpiar" @click="clearSearch">
                             <i class="fad fa-times" />
@@ -68,6 +68,10 @@
                     <div class="form-check form-switch mb-0" title="Mostrar solo planillas cerradas">
                         <input id="filtroSoloCerradas" v-model="soloCerradas" class="form-check-input" type="checkbox" @change="onSoloCerradasChange" />
                         <label class="form-check-label small text-muted" for="filtroSoloCerradas">Solo cerradas</label>
+                    </div>
+                    <div class="form-check form-switch mb-0" title="Agrupar las planillas por proyecto">
+                        <input id="filtroAgruparProyecto" v-model="agruparPorProyecto" class="form-check-input" type="checkbox" @change="onAgruparChange" />
+                        <label class="form-check-label small text-muted" for="filtroAgruparProyecto">Agrupar por proyecto</label>
                     </div>
                     <div v-if="!isViewLoading && !store.loading" class="text-muted text-nowrap">
                         <small>
@@ -126,7 +130,7 @@
                 <div v-else class="card-body p-0">
                     <!-- Vista Escritorio -->
                     <div class="table-responsive scrollbar d-none d-md-block">
-                        <DataTable :value="store.items" v-model:expandedRows="expandedRows" dataKey="uuid" lazy :paginator="true" :rows="store.pagination.itemsPerPage"
+                        <DataTable :value="filasTabla" v-model:expandedRows="expandedRows" dataKey="uuid" lazy :rowGroupMode="agruparPorProyecto ? 'subheader' : null" groupRowsBy="grupoProyecto" :expandableRowGroups="agruparPorProyecto" v-model:expandedRowGroups="gruposExpandidos" :paginator="true" :rows="store.pagination.itemsPerPage"
                             :totalRecords="store.pagination.totalItems" :first="(store.pagination.currentPage - 1) *
                                 store.pagination.itemsPerPage
                                 " :loading="store.loading" :rowsPerPageOptions="[10, 25, 50, 100]"
@@ -135,6 +139,11 @@
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
                             :emptyMessage="textoSinResultados" @page="onPageChange">
+                            <template #groupheader="{ data }">
+                                <span class="fw-bold text-dark"><i class="fad fa-briefcase text-primary me-2" aria-hidden="true"></i>{{ data.grupoProyecto }}</span>
+                                <span class="badge rounded-pill badge-subtle-primary ms-2">{{ etiquetaGrupo(data.grupoProyecto) }}</span>
+                            </template>
+
                             <Column expander style="width: 3rem" />
 
                             <Column header="Proyecto / Tipo" style="min-width: 160px;">
@@ -191,13 +200,20 @@
                                 </template>
                             </Column>
 
-                            <Column header="Acciones" class="text-center" style="width: 110px;">
+                            <Column header="Acciones" class="text-center" style="width: 190px;">
                                 <template #body="{ data }">
                                     <div class="d-flex align-items-center justify-content-center gap-1">
                                         <!-- La vista de detalle no existe (sin ruta): se eliminó el botón muerto. -->
                                         <button v-if="!isServicioCerrado(data)" class="btn btn-falcon-default btn-sm px-2" type="button"
                                             title="Continuar servicio" @click="goToControl(data.uuid)">
                                             <i class="fad fa-steering-wheel text-success"></i>
+                                        </button>
+
+                                        <button v-if="permissions.projectProfile && data.project_uuid" class="btn btn-falcon-default btn-sm px-2" type="button" title="Ver proyecto y sus vehículos" aria-label="Ver proyecto y sus vehículos" @click="goToProject(data.project_uuid)">
+                                            <i class="fad fa-eye text-info" aria-hidden="true"></i>
+                                        </button>
+                                        <button v-if="permissions.projectEdit && data.project_uuid" class="btn btn-falcon-default btn-sm px-2" type="button" title="Editar proyecto" aria-label="Editar proyecto" @click="goToProjectEdit(data.project_uuid)">
+                                            <i class="fad fa-briefcase text-primary" aria-hidden="true"></i>
                                         </button>
 
                                         <!-- Más acciones (Menu) -->
@@ -323,6 +339,10 @@
                         <i class="fad fa-file-pdf text-danger" aria-hidden="true"></i>
                         <span>PDF</span>
                     </button>
+                    <button v-if="permissions.projectProfile && item.project_uuid" class="mc-btn-secondary" type="button" @click="goToProject(item.project_uuid)">
+                        <i class="fad fa-eye text-info" aria-hidden="true"></i>
+                        <span>Proyecto</span>
+                    </button>
                     <button v-if="permissions.edit && !isServicioCerrado(item)" class="mc-btn-secondary" type="button" @click="goToEdit(item.uuid)">
                         <i class="fad fa-edit text-warning" aria-hidden="true"></i>
                         <span>Editar</span>
@@ -368,7 +388,7 @@
  * @module {Features.Fleet}
  * @resource {ServiceDeliveryControlSheet}
  */
-import { ref, onMounted, reactive, computed } from 'vue';
+import { ref, onMounted, reactive, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useServiceDeliveryControlSheetStore } from '../store/serviceDeliveryControlSheet.store.js';
 import { usePermissionsStore, useUserStore } from '@store';
@@ -395,7 +415,37 @@ const isViewLoading = ref(true);
 const searchQuery = ref('');
 const projectFilter = ref('');
 const soloCerradas = ref(false);
+const agruparPorProyecto = ref(true);
+const gruposExpandidos = ref([]);
 const expandedRows = ref([]);
+
+// Clave de grupo propia y siempre visible: PrimeVue resuelve
+// `project.project_name` y devuelve `null` cuando la fila no tiene proyecto,
+// con lo que `expandedRowGroups` no coincidiría y ese grupo quedaría oculto.
+// Con esta clave, el encabezado, el agrupado y la expansión usan el mismo valor.
+const filasTabla = computed(() => (Array.isArray(store.items) ? store.items : []).map((fila) => ({
+    ...fila,
+    grupoProyecto: fila?.project?.project_name || 'Sin Proyecto',
+})));
+
+// El badge del grupo cuenta las filas visibles: con una sola página (lo
+// habitual) es el total del proyecto; con varias se aclara para no prometer
+// lo que no está en pantalla.
+const planillasDelProyecto = (nombre) => filasTabla.value.filter((f) => f.grupoProyecto === nombre).length;
+const etiquetaGrupo = (nombre) => {
+    const n = planillasDelProyecto(nombre);
+    return store.pagination.totalItems > filasTabla.value.length
+        ? `${n} en esta página`
+        : `${n} planilla${n !== 1 ? 's' : ''}`;
+};
+
+// Los grupos arrancan expandidos: un encabezado que oculta las filas parece
+// una pantalla vacía. Se re-sincronizan con cada carga de datos; mientras los
+// datos no cambien, el usuario puede colapsarlos y su elección se respeta.
+const sincronizarGrupos = () => {
+    gruposExpandidos.value = [...new Set(filasTabla.value.map((f) => f.grupoProyecto))];
+};
+watch(filasTabla, () => { if (agruparPorProyecto.value) sincronizarGrupos(); });
 
 const showReportsDialog = ref(false);
 const reportVehicles = computed(() => store.catalogs.vehicles ?? []);
@@ -422,7 +472,7 @@ const detalleSinResultados = computed(() => {
         : 'Aquí aparecerán las planillas de tu vehículo asignado. Si falta alguna, contacta a la central.';
 });
 
-const permissions = reactive({ create: false, edit: false, delete: false, pdf: false });
+const permissions = reactive({ create: false, edit: false, delete: false, pdf: false, projectProfile: false, projectEdit: false });
 const { debouncedSearch } = useTable({}, () => store.setGlobalFilter(searchQuery.value));
 const { confirmDelete, initTooltips } = useTableActions(store, router);
 
@@ -442,6 +492,11 @@ const onPageChange = async (evento) => {
     await store.setPage(destino);
 };
 const onProjectFilterChange = async () => { await store.setProjectFilter(projectFilter.value); };
+const onAgruparChange = async () => {
+    if (agruparPorProyecto.value) sincronizarGrupos();
+    else gruposExpandidos.value = [];
+    await store.setAgruparPorProyecto(agruparPorProyecto.value);
+};
 const onSoloCerradasChange = async () => { await store.setSoloCerradas(soloCerradas.value); };
 
 const recorridosCount = (data) => recorridosCountHook(data);
@@ -457,6 +512,8 @@ const tipoLabel = (type) => { const tipos = { 'DIRECTO_CON_LA_EMPRESA': 'Directo
 const goToInternalControl = () => router.push('/planilla-de-control-de-prestacion-servicios/control-de-servicios');
 const goToCreate = () => router.push('/planilla-de-control-de-prestacion-servicios/crear');
 const goToControl = (uuid) => router.push(`/planilla-de-control-de-prestacion-servicios/control-de-servicios?id=${uuid}`);
+const goToProject = (uuid) => router.push(`/proyectos/perfil/${uuid}`);
+const goToProjectEdit = (uuid) => router.push(`/proyectos/editar/${uuid}`);
 const goToEdit = (uuid) => router.push(`/planilla-de-control-de-prestacion-servicios/editar/${uuid}`);
 
 const handleDelete = (item) => confirmDelete(item, {
@@ -528,7 +585,10 @@ onMounted(async () => {
         // El listado arranca mostrando todo (abiertas y cerradas); el
         // interruptor "Solo cerradas" filtra bajo demanda.
         soloCerradas.value = store.soloCerradas;
+        agruparPorProyecto.value = store.agruparPorProyecto;
         permissions.edit = permissionsStore.can('service_delivery_control_sheets.update');
+        permissions.projectProfile = permissionsStore.can('projects.profile');
+        permissions.projectEdit = permissionsStore.can('projects.update');
         permissions.delete = permissionsStore.can('service_delivery_control_sheets.delete');
         await store.fetchItems();
     } finally {

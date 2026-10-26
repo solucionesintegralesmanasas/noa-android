@@ -221,6 +221,63 @@ describe('serviceDeliveryControlSheet store', () => {
         });
     });
 
+    describe('agrupación por proyecto', () => {
+        const conProyecto = (uuid, project) => ({ ...HOJA(uuid, 'cond-1'), project });
+
+        it('en modo administrador pide la agrupación al servidor y la omite al apagarla', async () => {
+            serviceDeliveryControlSheetService.list.mockResolvedValue(paginaServidor([HOJA('a', 'cond-1')]));
+            const store = useServiceDeliveryControlSheetStore();
+            await store.fetchItems();
+            expect(serviceDeliveryControlSheetService.list.mock.calls.at(-1)[0].agrupar_proyecto).toBe(true);
+
+            serviceDeliveryControlSheetService.list.mockResolvedValue(paginaServidor([HOJA('a', 'cond-1')]));
+            await store.setAgruparPorProyecto(false);
+            expect(serviceDeliveryControlSheetService.list.mock.calls.at(-1)[0].agrupar_proyecto).toBeUndefined();
+        });
+
+        it('en modo conductor ordena por proyecto para que los grupos queden juntos', async () => {
+            sesion({ roles: ['CONDUCTOR'], thirdParty: 'cond-1' });
+            serviceDeliveryControlSheetService.listAll.mockResolvedValue({
+                success: true,
+                // Sin proyecto, con proyecto vacío y con nombre: los dos primeros
+                // casos negativos no revientan y quedan agrupados al principio.
+                data: { data: [conProyecto('z', { project_name: 'Zulu' }), conProyecto('a', { project_name: 'Alfa' }), conProyecto('b', { project_name: 'Alfa' }), conProyecto('s', undefined), conProyecto('e', {})] },
+            });
+            const store = useServiceDeliveryControlSheetStore();
+            await store.fetchItems();
+
+            expect(store.items.map((i) => i.uuid)).toEqual(['s', 'e', 'a', 'b', 'z']);
+        });
+
+        it('al apagar la agrupación se respeta el orden original del catálogo', async () => {
+            sesion({ roles: ['CONDUCTOR'], thirdParty: 'cond-1' });
+            serviceDeliveryControlSheetService.listAll.mockResolvedValue({
+                success: true,
+                data: { data: [conProyecto('z', { project_name: 'Zulu' }), conProyecto('a', { project_name: 'Alfa' })] },
+            });
+            const store = useServiceDeliveryControlSheetStore();
+            store.agruparPorProyecto = false;
+            await store.fetchItems();
+
+            expect(store.items.map((i) => i.uuid)).toEqual(['z', 'a']);
+        });
+
+        it('al agrupar se vuelve a la primera página', async () => {
+            sesion({ roles: ['CONDUCTOR'], thirdParty: 'cond-1' });
+            serviceDeliveryControlSheetService.listAll.mockResolvedValue({
+                success: true,
+                data: { data: Array.from({ length: 12 }, (_, i) => conProyecto(`p${i}`, { project_name: 'Alfa' })) },
+            });
+            const store = useServiceDeliveryControlSheetStore();
+            store.agruparPorProyecto = false;
+            await store.fetchItems();
+            await store.setPage(2);
+
+            await store.setAgruparPorProyecto(true);
+            expect(store.pagination.currentPage).toBe(1);
+        });
+    });
+
     describe('avisos de descarga', () => {
         it('avisa "guardado en tu dispositivo" cuando el archivo se guardó', async () => {
             serviceDeliveryControlSheetService.downloadDailyPdf.mockResolvedValue('guardado');
