@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     paginaDestino,
     esDeEstosConductores,
+    uuidsDelConductor,
     esParaSoloCerradas,
     coincideBusqueda,
     filtrarPlanillas,
@@ -41,6 +42,43 @@ describe('paginaDestino', () => {
     });
 });
 
+describe('uuidsDelConductor', () => {
+    const empresa = { uuid: 'empresa-1', third_party_uuid: 'emp-1' };
+
+    it('junta el conductor, el tercero del usuario y el de la empresa activa', () => {
+        expect(uuidsDelConductor({
+            company_uuid: 'empresa-1',
+            uuid_driver: 'cond-1',
+            third_party_uuid: 'afiliado-1',
+            companies: [empresa, { uuid: 'empresa-2', third_party_uuid: 'otra-empresa' }],
+        })).toEqual(['cond-1', 'afiliado-1', 'emp-1']);
+    });
+
+    it('sirve cuando la sesión no trae uuid_driver', () => {
+        expect(uuidsDelConductor({
+            company_uuid: 'empresa-1',
+            uuid_driver: null,
+            third_party_uuid: null,
+            companies: [empresa],
+        })).toEqual(['emp-1']);
+    });
+
+    it('no repite UUIDs ni toma el de una empresa distinta', () => {
+        expect(uuidsDelConductor({
+            company_uuid: 'empresa-1',
+            uuid_driver: 'cond-1',
+            third_party_uuid: 'cond-1',
+            companies: [empresa, { uuid: 'empresa-2', third_party_uuid: 'empresa-2' }],
+        })).toEqual(['cond-1', 'emp-1']);
+    });
+
+    it('sin sesión devuelve lista vacía en vez de romperse', () => {
+        expect(uuidsDelConductor(null)).toEqual([]);
+        expect(uuidsDelConductor({})).toEqual([]);
+        expect(uuidsDelConductor({ uuid_driver: '', third_party_uuid: null })).toEqual([]);
+    });
+});
+
 describe('esDeEstosConductores', () => {
     const planilla = { internal_control: { third_party_uuid: 'cond-1' } };
 
@@ -66,6 +104,22 @@ describe('esDeEstosConductores', () => {
         expect(esDeEstosConductores(planilla, [])).toBe(false);
         expect(esDeEstosConductores(planilla, null)).toBe(false);
         expect(esDeEstosConductores(planilla, undefined)).toBe(false);
+    });
+
+    it('acepta la hoja cuando el conductor está en uno de sus días hijos', () => {
+        const multiDia = {
+            internal_control: { third_party_uuid: 'cond-2' },
+            children: [
+                { internal_control: { third_party_uuid: 'cond-2' } },
+                { internal_control: { third_party_uuid: 'cond-1' } },
+            ],
+        };
+        expect(esDeEstosConductores(multiDia, ['cond-1'])).toBe(true);
+    });
+
+    it('la hoja sin control propio ni de sus hijos sigue sin atribuirse', () => {
+        expect(esDeEstosConductores({ children: [{ internal_control: null }, {}] }, ['cond-1'])).toBe(false);
+        expect(esDeEstosConductores({ children: 'roto' }, ['cond-1'])).toBe(false);
     });
 });
 

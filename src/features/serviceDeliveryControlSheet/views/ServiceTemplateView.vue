@@ -1444,8 +1444,9 @@ import BasePageHeader from '@/components/BasePageHeader.vue';
 import PrimeSelect from 'primevue/select';
 import { useServiceDeliveryControlSheetStore } from '../store/serviceDeliveryControlSheet.store.js';
 import serviceDeliveryControlSheetService from '../services/serviceDeliveryControlSheet.service.js';
+import { esDeEstosConductores, uuidsDelConductor } from '../hooks/useServiceList.js';
 import vehicleInspectionsService from '../../vehicleInspections/services/vehicleInspections.service.js';
-import { useUserStore } from '@store';
+import { useAuthStore, useUserStore } from '@store';
 import { usePermissionsStore } from '@store/modules/permissions.js';
 import { useDriverTrackingStore } from '../../tracking/store/driverTracking.store.js';
 import FirmaPad from '../components/FirmaPad.vue';
@@ -1666,7 +1667,6 @@ const isConductor = computed(() => {
         return false;
     }
 });
-const conductorUuid = computed(() => userStore.uuid_driver || userStore.third_party_uuid || '');
 const debeMostrarFiltroProyecto = computed(() => !isConductor.value || proyectosList.value.length > 1);
 const debeMostrarPaso1 = computed(() => {
     if (!isConductor.value) return true;
@@ -2767,17 +2767,25 @@ onMounted(async () => {
         try {
             if (!permissionsStore.isLoaded) await permissionsStore.load();
         } catch { /* roles persistidos: se continúa con lo disponible */ }
+        // La identidad del conductor llega en el login y en `/me`. Si la sesión
+        // persistida es antigua (o el arranque aún no la refrescó), se pide
+        // antes de filtrar: sin este paso solo quedaría el UUID del afiliado y
+        // el filtro estricto descartaría todas las planillas del conductor.
+        if (permissionsStore.hasRole('CONDUCTOR') && !userStore.uuid_driver) {
+            try {
+                await useAuthStore().fetchProfile();
+            } catch { /* sin red: se sigue con lo cacheado */ }
+        }
         const resServ = await serviceDeliveryControlSheetService.listAll();
         const listServ = resServ?.data?.data ?? resServ?.data ?? resServ ?? [];
         const validList = Array.isArray(listServ) ? listServ : [];
 
         const esConductor = isConductor.value;
-        const driverUuid = conductorUuid.value;
-        const afiliadoUuid = userStore.third_party_uuid || '';
         const companyUuid = userStore.company_uuid;
-        // El pivote puede guardar el UUID del conductor (uuid_driver) o el del
-        // afiliado según el flujo de asignación: se consulta con ambos y se fusiona.
-        const uuidsConductor = [...new Set([driverUuid, afiliadoUuid].filter(Boolean))];
+        // El pivote puede guardar el UUID del conductor (uuid_driver), el del
+        // afiliado o el de la empresa según el flujo de asignación: se consultan
+        // todos y se fusionan sus proyectos.
+        const uuidsConductor = uuidsDelConductor(userStore);
         const filtroConductor = esConductor && uuidsConductor.length ? uuidsConductor[0] : null;
 
         const catalogs = await store.loadFormOptions(companyUuid, filtroConductor);
@@ -2785,17 +2793,20 @@ onMounted(async () => {
         try {
             if (companyUuid) {
                 await store.loadProjects(companyUuid, filtroConductor);
-                let lista = store.projects || catalogs.projects || [];
-                // Si hay segundo UUID distinto (conductor + afiliado), fusionar resultados.
+                const lista = store.projects || catalogs.projects || [];
+                // Con más de un UUID (conductor, afiliado, empresa) se fusionan
+                // los proyectos de todos: si el pivote guardó otro, igual aparecen.
                 if (esConductor && uuidsConductor.length > 1) {
-                    const extra = await serviceDeliveryControlSheetService.listProjects(companyUuid, uuidsConductor[1]);
                     const vistos = new Set(lista.map(p => p.uuid));
-                    (Array.isArray(extra) ? extra : []).forEach(p => {
-                        if (p?.uuid && !vistos.has(p.uuid)) {
-                            vistos.add(p.uuid);
-                            lista.push(p);
-                        }
-                    });
+                    for (const uuid of uuidsConductor.slice(1)) {
+                        const extra = await serviceDeliveryControlSheetService.listProjects(companyUuid, uuid);
+                        (Array.isArray(extra) ? extra : []).forEach(p => {
+                            if (p?.uuid && !vistos.has(p.uuid)) {
+                                vistos.add(p.uuid);
+                                lista.push(p);
+                            }
+                        });
+                    }
                     store.projects = lista;
                 }
                 proyectosList.value = lista;
@@ -2808,13 +2819,13 @@ onMounted(async () => {
         proyectosCargados.value = true;
 
         if (esConductor) {
-            // Filtro estricto del conductor: solo sus planillas. La rama anterior
-            // "proyecto permitido" dejaba ver las hojas de todo el proyecto,
-            // incluidas las de otros conductores. Sin identidad de conductor no
-            // se muestra ninguna fila (nunca "por si acaso").
+            // Filtro estricto del conductor: solo sus planillas, mirando el
+            // control interno de la hoja y el de sus días hijos (la misma regla
+            // del backend). Sin identidad de conductor no se muestra ninguna
+            // fila (nunca "por si acaso").
             serviciosCatalogo.value = uuidsConductor.length
                 ? validList.filter(s => (s.is_active == 1 || s.is_active === true)
-                    && uuidsConductor.includes(s.internal_control?.third_party_uuid || ''))
+                    && esDeEstosConductores(s, uuidsConductor))
                 : [];
         } else {
             serviciosCatalogo.value = validList.filter(s => s.is_active == 1 || s.is_active === true);
@@ -2865,7 +2876,14 @@ onUnmounted(() => {
     if (timerInterval) clearInterval(timerInterval);
 });
 
-watch(() => formData.servicioId, (newVal) => {
+watch(() => formData.servicioId, (newVal, oldVal) => {
+    // Al cambiar de servicio (otro vehículo) no se arrastra el estado del
+    // anterior: el cronómetro y el combustible son de la planilla nueva.
+    if (newVal !== oldVal) {
+        if (timerInterval) clearInterval(timerInterval);
+        timerStr.value = '00:00:00';
+        formData.start_fuel_level = '';
+    }
     inspeccionDia.value = { checked: false, exists: false, uuid: null, fecha: '', verificando: false };
     if (!newVal) {
         reiniciar();

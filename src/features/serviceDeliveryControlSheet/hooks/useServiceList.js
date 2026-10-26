@@ -66,18 +66,51 @@ export function paginaDestino(evento = {}, filasActuales = 10) {
 }
 
 /**
+ * UUIDs que identifican al conductor logueado. El pivote de la empresa puede
+ * guardar el UUID del conductor (`uuid_driver`), el del tercero vinculado al
+ * usuario o el de la empresa activa según el flujo de asignación: se consultan
+ * los tres para que el filtro no dependa de cuál llegó en la sesión.
+ *
+ * Sin ninguno devuelve `[]` (y el filtro no muestra filas: nunca "por si acaso").
+ *
+ * @param {Object} usuario - Store de usuario (o un objeto con los mismos campos).
+ * @returns {string[]}
+ */
+export function uuidsDelConductor(usuario) {
+    const companies = Array.isArray(usuario?.companies) ? usuario.companies : [];
+    const empresa = companies.find((c) => c?.uuid && c.uuid === usuario?.company_uuid);
+    return [...new Set([
+        usuario?.uuid_driver,
+        usuario?.third_party_uuid,
+        empresa?.third_party_uuid,
+    ].filter(Boolean))];
+}
+
+/**
  * true si la planilla pertenece a alguno de los conductores indicados.
- * La relación `internal_control.third_party_uuid` es el conductor de la hoja;
- * sin ese dato la planilla no se atribuye a nadie (nunca se muestra "por si acaso").
+ * Se mira el control interno de la hoja y, si no coincide, el de sus días
+ * hijos: es la misma regla que aplica el backend en `/list`, que devuelve la
+ * hoja cuando cualquiera de sus días está asignado al conductor.
+ *
+ * Sin `internal_control.third_party_uuid` la planilla no se atribuye a nadie
+ * (nunca se muestra "por si acaso").
  *
  * @param {Object} planilla - Fila del listado o del catálogo.
- * @param {string[]} uuidsConductor - UUID del conductor y, si aplica, del afiliado.
+ * @param {string[]} uuidsConductor - UUID del conductor, del afiliado y de la empresa.
  * @returns {boolean}
  */
 export function esDeEstosConductores(planilla, uuidsConductor) {
     if (!Array.isArray(uuidsConductor) || !uuidsConductor.length) return false;
-    const conductor = planilla?.internal_control?.third_party_uuid || '';
-    return !!conductor && uuidsConductor.includes(conductor);
+    const permitidos = new Set(uuidsConductor);
+    const esDelConductor = (control) => {
+        const conductor = control?.third_party_uuid || '';
+        return !!conductor && permitidos.has(conductor);
+    };
+
+    if (esDelConductor(planilla?.internal_control)) return true;
+
+    const hijos = Array.isArray(planilla?.children) ? planilla.children : [];
+    return hijos.some((hijo) => esDelConductor(hijo?.internal_control));
 }
 
 /**

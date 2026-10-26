@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { toast } from '@/utils/toast.js';
 import { runStoreAction } from '@store/helpers/runStoreAction.js';
 import { usePermissionsStore, useUserStore } from '@store';
-import { filtrarPlanillas, mensajeDescarga } from '../hooks/useServiceList.js';
+import { filtrarPlanillas, mensajeDescarga, uuidsDelConductor } from '../hooks/useServiceList.js';
 import serviceDeliveryControlSheetService from '../services/serviceDeliveryControlSheet.service.js';
 
 /**
@@ -107,15 +107,16 @@ export const useServiceDeliveryControlSheetStore = defineStore('serviceDeliveryC
         },
 
         /**
-         * UUIDs que identifican al conductor logueado (conductor y, en su caso,
-         * el tercero afiliado: el pivote puede guardar cualquiera de los dos).
+         * UUIDs que identifican al conductor logueado (conductor, tercero
+         * vinculado y tercero de la empresa activa: el pivote puede guardar
+         * cualquiera de ellos). La regla vive en la función pura
+         * `uuidsDelConductor` para que la vista y el listado filtren igual.
          * @returns {string[]}
          * @private
          */
         _uuidsConductor() {
             try {
-                const u = useUserStore();
-                return [u?.uuid_driver, u?.third_party_uuid].filter(Boolean);
+                return uuidsDelConductor(useUserStore());
             } catch {
                 return [];
             }

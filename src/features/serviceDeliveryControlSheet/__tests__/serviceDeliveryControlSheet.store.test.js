@@ -25,12 +25,13 @@ import { usePermissionsStore, useUserStore } from '@store';
 import { useServiceDeliveryControlSheetStore } from '../store/serviceDeliveryControlSheet.store.js';
 
 /** Fija la sesión: roles + UUIDs del usuario. */
-function sesion({ roles = ['ADMIN_EMPRESA'], uuidDriver = null, thirdParty = null } = {}) {
+function sesion({ roles = ['ADMIN_EMPRESA'], uuidDriver = null, thirdParty = null, companies = [], companyUuid = 'empresa-1' } = {}) {
     usePermissionsStore.mockReturnValue({ hasRole: (r) => roles.includes(r) });
     useUserStore.mockReturnValue({
-        company_uuid: 'empresa-1',
+        company_uuid: companyUuid,
         uuid_driver: uuidDriver,
         third_party_uuid: thirdParty,
+        companies,
     });
 }
 
@@ -116,6 +117,47 @@ describe('serviceDeliveryControlSheet store', () => {
 
             expect(store.items).toEqual([]);
             expect(store.pagination.totalItems).toBe(0);
+        });
+
+        it('toma la identidad del tercero de la empresa si la sesión no trae uuid_driver', async () => {
+            sesion({
+                roles: ['CONDUCTOR'],
+                thirdParty: 'afiliado-1',
+                companies: [{ uuid: 'empresa-1', third_party_uuid: 'cond-1' }],
+            });
+            serviceDeliveryControlSheetService.listAll.mockResolvedValue({
+                success: true,
+                data: { data: [HOJA('a', 'cond-1'), HOJA('b', 'cond-2')] },
+            });
+            const store = useServiceDeliveryControlSheetStore();
+            await store.fetchItems();
+
+            expect(store.items.map((i) => i.uuid)).toEqual(['a']);
+        });
+
+        it('cuenta la planilla cuando el control interno está en un día hijo', async () => {
+            sesion({ roles: ['CONDUCTOR'], thirdParty: 'cond-1' });
+            serviceDeliveryControlSheetService.listAll.mockResolvedValue({
+                success: true,
+                data: {
+                    data: [
+                        {
+                            uuid: 'multi',
+                            internal_control: null,
+                            is_active: true,
+                            children: [
+                                { uuid: 'dia-1', internal_control: { third_party_uuid: 'cond-1' } },
+                                { uuid: 'dia-2', internal_control: { third_party_uuid: 'cond-2' } },
+                            ],
+                        },
+                        { uuid: 'ajena', internal_control: { third_party_uuid: 'cond-2' }, is_active: true, children: [] },
+                    ],
+                },
+            });
+            const store = useServiceDeliveryControlSheetStore();
+            await store.fetchItems();
+
+            expect(store.items.map((i) => i.uuid)).toEqual(['multi']);
         });
 
         it('una respuesta mal formada no revienta el filtrado', async () => {
