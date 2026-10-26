@@ -220,6 +220,26 @@ export const useDriverTrackingStore = defineStore('driverTracking', {
         },
 
         /**
+         * Auto-arranque al iniciar sesión: resuelve el vehículo preferido
+         * (o el primero de la lista) e inicia el rastreo si aún no está
+         * activo. Sin vehículo no crea sesión para no dejar sesiones
+         * huérfanas en el servidor. Devuelve la sesión (o null).
+         */
+        async autoStartSiProcede({ vehicles = [], preferredVehicleUuid = null } = {}) {
+            const lista = Array.isArray(vehicles) ? vehicles : [];
+            const vehicleUuid = preferredVehicleUuid || lista[0]?.uuid || null;
+            if (!vehicleUuid) return null;
+
+            // Ya activo o arrancando: solo sincronizar el vehículo visible.
+            if (this.isTracking || this.watchActive || this.starting) {
+                this.updateContext({ vehicleUuid });
+                return this.session;
+            }
+
+            return this.ensureTracking({ vehicleUuid });
+        },
+
+        /**
          * Pide el permiso al sistema y traduce sus errores: GPS apagado y
          * permiso denegado reciben mensajes distintos para que la UI ofrezca
          * la acción correcta.

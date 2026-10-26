@@ -85,7 +85,10 @@ async function initAutoTracking() {
 
     autoStarted = true;
     autoAttempted.value = true;
-    const result = await driverTracking.ensureTracking({ vehicleUuid: selectedVehicleUuid.value });
+    const result = await driverTracking.autoStartSiProcede({
+        vehicles: props.vehicles,
+        preferredVehicleUuid: selectedVehicleUuid.value,
+    });
     if (!result && !driverTracking.isTracking) {
         errorMsg.value = driverTracking.errorMsg
             ? 'Error de GPS: ' + driverTracking.errorMsg

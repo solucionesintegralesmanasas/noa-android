@@ -204,6 +204,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useAuthStore, usePermissionsStore, useUserStore } from '@store';
 import { useDashboardStore } from '../store/dashboard.store';
+import { useDriverTrackingStore } from '../../tracking/store/driverTracking.store.js';
 import { logger } from '@utils/logger.js';
 import { primerNombre as primerNombreDe, iniciales as inicialesDe, saludoPorHora, filtrarVehiculos, formatearNumero, formatearPlaca } from '../utils/presentacionConductor.js';
 
@@ -211,6 +212,7 @@ const authStore = useAuthStore();
 const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
 const dashboardStore = useDashboardStore();
+const driverTracking = useDriverTrackingStore();
 
 const busqueda = ref('');
 
@@ -262,6 +264,14 @@ const tieneInspeccionHoy = computed(() => !!inspeccionHoy.value);
 onMounted(async () => {
   try {
     await dashboardStore.fetchConductorDashboardData(30);
+    // Auto-arranque del GPS al iniciar sesión (igual que el dashboard web):
+    // solo arranca si el conductor tiene un vehículo asignado.
+    if (permissionsStore.hasRole('CONDUCTOR')) {
+      driverTracking.autoStartSiProcede({
+        vehicles: vehiculos.value,
+        preferredVehicleUuid: primerVehiculo.value?.uuid || null,
+      }).catch(() => {});
+    }
   } catch (error) {
     logger.error('No se pudo cargar el panel móvil del conductor', error);
   }
