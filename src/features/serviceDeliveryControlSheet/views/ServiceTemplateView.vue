@@ -129,6 +129,14 @@
                                     </div>
                                 </div>
 
+                                <div v-if="servicioSeleccionado && !planillaActiva" class="alert alert-warning d-flex align-items-start gap-3 mt-3 mb-0" role="alert">
+                                    <i class="fad fa-lock mt-1" aria-hidden="true"></i>
+                                    <div>
+                                        <strong class="d-block">Sin planilla vigente para hoy ({{ formatFecha(hoyOperativo) }})</strong>
+                                        <span>Solo se diligencia la planilla del día vigente. Si ya se cerró no admite cambios, y los días anteriores quedan bloqueados sin arrastrarse a la jornada actual.</span>
+                                    </div>
+                                </div>
+
                                 <!-- Detalle del Servicio Seleccionado -->
                                 <div v-if="servicioSeleccionado" class="mt-4 service-preview-box rounded-3 border p-3 p-md-4 bg-light bg-opacity-50">
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-2 border-bottom">
@@ -230,10 +238,10 @@
                                                     <span class="fs-12 fw-semibold">{{ formatFecha(p.service_date) }}</span>
                                                     <span
                                                         class="badge rounded-pill px-2 py-0.5 fs-10"
-                                                        :class="p.is_active == 1 || p.is_active === true ? 'bg-success text-white' : 'bg-secondary bg-opacity-25 text-muted'"
+                                                        :class="estadoDiaPlanilla(p).clase"
                                                     >
                                                         <i class="fas fa-circle me-1" style="font-size: 6px;"></i>
-                                                        {{ p.is_active == 1 || p.is_active === true ? 'Pendiente / Abierto' : 'Cerrado' }}
+                                                        {{ estadoDiaPlanilla(p).texto }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -248,7 +256,7 @@
                                     <i class="fas fa-arrow-left"></i>
                                     <span>Regresar</span>
                                 </button>
-                                <button v-else class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold d-inline-flex align-items-center gap-2" @click="goStep2">
+                                <button v-else class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold d-inline-flex align-items-center gap-2" :disabled="!planillaActiva" @click="goStep2">
                                     <span>Continuar al Inicio de Servicio</span>
                                     <i class="fas fa-arrow-right"></i>
                                 </button>
@@ -1445,6 +1453,10 @@ import PrimeSelect from 'primevue/select';
 import { useServiceDeliveryControlSheetStore } from '../store/serviceDeliveryControlSheet.store.js';
 import serviceDeliveryControlSheetService from '../services/serviceDeliveryControlSheet.service.js';
 import { esDeEstosConductores, uuidsDelConductor } from '../hooks/useServiceList.js';
+import {
+    estadoDiaPlanilla as estadoDiaPlanillaBase,
+    seleccionarPlanillaVigente,
+} from '../utils/planillaVigente.js';
 import vehicleInspectionsService from '../../vehicleInspections/services/vehicleInspections.service.js';
 import { useAuthStore, useUserStore } from '@store';
 import { usePermissionsStore } from '@store/modules/permissions.js';
@@ -1740,7 +1752,10 @@ const obtenerFechaHoy = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
-const hoyInspeccion = computed(obtenerFechaHoy);
+// Fecha operativa del día: se refresca con el reloj para que la planilla
+// vigente cambie sola al cruzar la medianoche.
+const hoyOperativo = ref(obtenerFechaHoy());
+const hoyInspeccion = computed(() => hoyOperativo.value);
 
 const verificarInspeccionDia = async (manual = false) => {
     const vUuid = planillaVehiculoUuid.value;
@@ -1945,15 +1960,17 @@ const planillasPendientes = computed(() => {
     return planillasDiarias.value.filter(p => p.is_active == 1 || p.is_active === true);
 });
 
-const planillaActiva = computed(() => {
-    const s = servicioSeleccionado.value;
-    if (!s) return null;
-    if (!esMultiDia.value) return s;
-    const pend = planillasPendientes.value;
-    if (pend.length === 0) return null;
-    const idx = Math.min(planillaIndex.value, pend.length - 1);
-    return pend[idx];
-});
+// Estado visible del desglose diario: el día de hoy se distingue del resto y
+// los días pasados sin cerrar se marcan como vencidos (quedan bloqueados).
+const estadoDiaPlanilla = (p) => estadoDiaPlanillaBase(p, hoyOperativo.value);
+
+// La única planilla operable es la del día calendario vigente. Los días
+// anteriores se bloquean aunque sigan abiertos: no se arrastran a hoy.
+const planillaActiva = computed(() => seleccionarPlanillaVigente(
+    servicioSeleccionado.value,
+    planillasDiarias.value,
+    hoyOperativo.value,
+));
 
 const planillaActivaUuid = computed(() => planillaActiva.value?.uuid || '');
 
@@ -1989,6 +2006,8 @@ let startTimeSeconds = 0;
 
 const updateClock = () => {
     const now = new Date();
+    const fecha = obtenerFechaHoy();
+    if (fecha !== hoyOperativo.value) hoyOperativo.value = fecha;
     clockStr.value = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
 
@@ -2167,6 +2186,10 @@ const goStep2 = () => {
         return;
     }
     delete validationErrors.servicioId;
+    if (!planillaActiva.value) {
+        toast('Sin planilla vigente', 'La hoja de control solo puede diligenciarse el día vigente.', 'warning');
+        return;
+    }
     if (!formData.start_time) {
         const now = new Date();
         formData.start_time = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -2175,6 +2198,9 @@ const goStep2 = () => {
 };
 
 const iniciarServicio = async () => {
+    if (!planillaActivaUuid.value) {
+        return toast('Sin planilla vigente', 'La hoja de control solo puede diligenciarse el día vigente.', 'warning');
+    }
     if (!formData.start_time || !formData.starting_kilometer) {
         return toast('Atención', 'La hora de inicio y el kilometraje son obligatorios.', 'warning');
     }
@@ -2682,38 +2708,8 @@ const cerrarPlanillaGlobalMulti = async () => {
 };
 
 const continuarTrasGuardar = () => {
-    const restantes = planillasPendientes.value;
-    if (esMultiDia.value && restantes.length > 0) {
-        toast('¡Éxito!', `Planilla diaria guardada. Quedan ${restantes.length} planilla(s) pendiente(s).`, 'success');
-
-        formData.start_time = '';
-        formData.starting_kilometer = formData.ending_kilometer || formData.starting_kilometer;
-        formData.end_time = '';
-        formData.ending_kilometer = '';
-        formData.number_of_tolls = 0;
-        formData.total_toll_value = 0;
-        formData.end_novelty = '';
-        formData.route_novelty = '';
-        planillaIndex.value = 0;
-
-        clearFirma('funcionario');
-        clearFirma('conductor');
-        firma.funcionarioNombre = '';
-        firma.conductorNombre = '';
-
-        cierresRecorridos.value = [];
-        firmasRecorridos.value = [];
-        firmaPadsRecorridos.value = {};
-
-        goStep(2);
-        persistirProgreso();
-        nextTick(() => {
-            initCanvas('funcionario');
-            initCanvas('conductor');
-        });
-        return;
-    }
-
+    // Solo se diligencia el día vigente: al cerrarlo no se salta a días
+    // vencidos ni a pendientes de otras fechas.
     limpiarProgreso();
     cierresRecorridos.value = [];
     cerradosRecorridos.value = [];
@@ -2849,7 +2845,9 @@ onMounted(async () => {
             );
             if (delProyecto.length === 1) {
                 formData.servicioId = delProyecto[0].uuid;
-                currentStep.value = 2;
+                // Solo salta al inicio si hay planilla del día vigente; si no,
+                // se queda en el paso 1 con el aviso de bloqueo.
+                currentStep.value = planillaActiva.value ? 2 : 1;
             } else {
                 currentStep.value = 1;
             }
@@ -2900,9 +2898,15 @@ watch(() => formData.servicioId, (newVal, oldVal) => {
         return;
     }
 
-    cargarDatosPlanilla(planillaActiva.value || s);
+    const activa = planillaActiva.value;
+    if (!activa) {
+        // Sin planilla del día vigente: no se arrastra un día vencido ni se
+        // avanza al inicio. La vista muestra el aviso de bloqueo.
+        return;
+    }
 
-    const activa = planillaActiva.value || s;
+    cargarDatosPlanilla(activa);
+
     if (activa.start_time) {
         goStep(3);
         startTimer();
