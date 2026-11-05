@@ -1223,6 +1223,30 @@
                             </span>
                         </div>
 
+                        <!-- SPEC-002 §5.2: el motivo es obligatorio y queda en el PDF/Excel. -->
+                        <div v-if="esDisponibilidad" class="mb-3">
+                            <label class="form-label fw-medium text-700" for="f-availability_reason" style="font-size: 0.9rem;">
+                                Motivo de la jornada en disponibilidad <span class="text-danger ms-1" title="Campo requerido">*</span>
+                            </label>
+                            <input
+                                id="f-availability_reason"
+                                v-model="formData.availability_reason"
+                                type="text"
+                                class="form-control"
+                                :class="{ 'is-invalid': errorAvailabilityReason }"
+                                :aria-invalid="errorAvailabilityReason ? 'true' : 'false'"
+                                :aria-describedby="errorAvailabilityReason ? 'f-availability_reason-error' : 'f-availability_reason-help'"
+                                maxlength="255"
+                                placeholder="Ej.: vehículo en mantenimiento, vía cerrada, descanso"
+                            />
+                            <small id="f-availability_reason-help" class="form-text text-muted fs-12">
+                                Quedará registrado en el PDF y el Excel como respaldo de que el vehículo no prestó servicio ese día.
+                            </small>
+                            <div v-if="errorAvailabilityReason" id="f-availability_reason-error" class="invalid-feedback d-block" role="alert">
+                                {{ errorAvailabilityReason }}
+                            </div>
+                        </div>
+
                         <div v-if="!rutasMulti" class="row g-3 mb-4">
                             <!-- Firma Funcionario (se oculta en disponibilidad: solo conductor + coordinador) -->
                             <div v-if="!esDisponibilidad" class="col-12 col-md-6">
@@ -1457,6 +1481,7 @@ import {
     estadoDiaPlanilla as estadoDiaPlanillaBase,
     seleccionarPlanillaVigente,
 } from '../utils/planillaVigente.js';
+import { fechaHoyColombia } from '../utils/fechaColombia.js';
 import vehicleInspectionsService from '../../vehicleInspections/services/vehicleInspections.service.js';
 import { useAuthStore, useUserStore } from '@store';
 import { usePermissionsStore } from '@store/modules/permissions.js';
@@ -1542,6 +1567,7 @@ const formData = reactive({
     number_of_tolls: 0,
     total_toll_value: 0,
     end_novelty: '',
+    availability_reason: '',
 });
 
 const firma = reactive({
@@ -1553,8 +1579,30 @@ const firma = reactive({
 // más de un recorrido en el día; con un solo recorrido se mantiene el
 // flujo normal (diligenciamiento único, firmas únicas).
 const rutasMulti = computed(() => recorridosPlanillaActiva.value.length > 1);
-// Disponibilidad: la planilla inició sin recorridos anexados. Solo firman conductor y coordinador.
-const esDisponibilidad = computed(() => (recorridosPlanillaActiva.value || []).length === 0);
+// Disponibilidad: se prioriza la declaración explícita del backend (SPEC-002 §5.2);
+// para no romper hojas históricas, sin declaración se infiere "sin recorridos".
+const esDisponibilidad = computed(() => {
+    if (planillaActiva.value?.day_kind === 'disponibilidad') return true;
+    return (recorridosPlanillaActiva.value || []).length === 0;
+});
+
+// Error accesible del motivo de disponibilidad (SPEC-002 §5.2).
+const errorAvailabilityReason = ref('');
+
+const validarMotivoDisponibilidad = () => {
+    if (!esDisponibilidad.value) {
+        errorAvailabilityReason.value = '';
+        return true;
+    }
+    const motivo = (formData.availability_reason || '').trim();
+    errorAvailabilityReason.value = motivo ? '' : 'Indique el motivo por el que el vehículo queda en disponibilidad.';
+    if (errorAvailabilityReason.value) {
+        document.getElementById('f-availability_reason')?.focus();
+        return false;
+    }
+    return true;
+};
+
 const cierresRecorridos = ref([]);
 const firmasRecorridos = ref([]);
 const firmaPadsRecorridos = ref({});
@@ -1748,10 +1796,7 @@ const planillaConductorUuid = computed(() =>
 // volver a exigirla cuando el conductor ya la registró el mismo día calendario.
 const inspeccionDia = ref({ checked: false, exists: false, uuid: null, fecha: '', verificando: false });
 
-const obtenerFechaHoy = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const obtenerFechaHoy = () => fechaHoyColombia();
 // Fecha operativa del día: se refresca con el reloj para que la planilla
 // vigente cambie sola al cruzar la medianoche.
 const hoyOperativo = ref(obtenerFechaHoy());
@@ -2466,6 +2511,11 @@ const guardarPlanilla = async () => {
         return toast('Falta Firma', 'La firma del conductor es requerida para certificar la planilla.', 'warning');
     }
 
+    // SPEC-002 §5.2: la jornada en disponibilidad exige su motivo antes de cerrar.
+    if (!validarMotivoDisponibilidad()) {
+        return;
+    }
+
     // Con un solo recorrido el funcionario y el cierre de la ruta deben quedar
     // almacenados en la tabla de recorridos, no solo en la planilla global.
     // Se valida y se envía el arreglo routes para que el backend lo persista.
@@ -2507,6 +2557,11 @@ const guardarPlanilla = async () => {
             conductor_name: firma.conductorNombre,
             total_hours: resumen.duracionFormatted,
             status: 'COMPLETED',
+            // SPEC-002 §5.2: se declara el día para que el motivo quede persistido
+            // y el PDF/Excel no inventen un texto fijo.
+            ...(esDisponibilidad.value
+                ? { day_kind: 'disponibilidad', availability_reason: (formData.availability_reason || '').trim() }
+                : { day_kind: 'operacion' }),
             ...(cierreRutaUnica ? { routes: cierreRutaUnica } : {}),
         };
 
